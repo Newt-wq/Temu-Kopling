@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Send, User, MessageCircle } from "lucide-react";
+import { useRiderAuth } from "@/app/dashboard/rider/layout";
+import { io, Socket } from "socket.io-client";
+
 
 type Message = {
   sender: "customer" | "rider";
@@ -12,60 +15,79 @@ type Message = {
 type ChatSession = {
   chatId: string;
   customer: { id: string; name: string };
-  riderId: number;
+  riderId: string | number;
   messages: Message[];
 };
 
 export default function RiderChatPage() {
+  const { riderAuth } = useRiderAuth();
+  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
-  const [riderAuth, setRiderAuth] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadChats = () => {
-    const authData = sessionStorage.getItem("rider_auth");
-    if (!authData) return;
-    const auth = JSON.parse(authData);
-    setRiderAuth(auth);
+  // Init socket lokal di halaman chat
+  useEffect(() => {
+    const sock = io("http://localhost:5000");
+    socketRef.current = sock;
+    setSocket(sock);
+    return () => { sock.disconnect(); socketRef.current = null; };
+  }, []);
 
-    const data = localStorage.getItem("temu_chats");
-    if (data) {
-      const parsed = JSON.parse(data);
-      const myChats: ChatSession[] = [];
+
+  // Fungsi baru untuk menyusun data mentah dari Supabase
+  const formatAndSetChats = (dbMessages: any[], authData: any) => {
+    const myChats: ChatSession[] = [];
+    
+    dbMessages.forEach((row) => {
+      const msgData = row.message_data;
       
-      Object.keys(parsed).forEach(key => {
-        const session = parsed[key];
-        // Only load chats for this specific rider
-        if (session.riderId === auth.id) {
-          myChats.push({
-            chatId: key,
-            customer: session.customer,
-            riderId: session.riderId,
-            messages: session.messages || [],
-          });
+      // Filter: Hanya ambil pesan milik rider ini
+      if (msgData.riderId === authData.id) {
+        // Cek apakah room chat-nya sudah ada
+        let existingChat = myChats.find(c => c.chatId === msgData.chatId);
+        
+        if (!existingChat) {
+          existingChat = {
+            chatId: msgData.chatId,
+            customer: msgData.customer || { id: "unknown", name: "Pelanggan" },
+            riderId: msgData.riderId,
+            messages: []
+          };
+          myChats.push(existingChat);
         }
-      });
-      
-      setChats(myChats);
-    }
+        
+        existingChat.messages.push(msgData.message);
+      }
+    });
+    
+    setChats(myChats);
   };
 
   useEffect(() => {
-    loadChats();
+    if (!riderAuth || !socket) return;
 
-    const handleStorage = () => {
-      loadChats();
-    };
+    // Dengarkan history chat
+    socket.on("chat_history_loaded", (data: any[]) => {
+      formatAndSetChats(data, riderAuth);
+    });
 
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("temu_chat_update", handleStorage);
+    // Realtime: ada pesan baru → refresh history
+    socket.on("receive_message", () => {
+      socket.emit("request_chat_history");
+    });
+
+    // Minta history saat halaman dibuka
+    socket.emit("request_chat_history");
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("temu_chat_update", handleStorage);
+      socket.off("chat_history_loaded");
+      socket.off("receive_message");
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riderAuth, socket]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -83,25 +105,23 @@ export default function RiderChatPage() {
       timestamp: new Date().toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }),
     };
 
-    // Update local state temporarily for snappy UI
-    const updatedChats = chats.map(c => {
+    // Update UI langsung biar terasa cepat (Optimistic UI)
+    setChats(prevChats => prevChats.map(c => {
       if (c.chatId === activeChatId) {
         return { ...c, messages: [...c.messages, newMessage] };
       }
       return c;
-    });
-    setChats(updatedChats);
-    setInputText("");
+    }));
 
-    // Save to localStorage
-    const data = localStorage.getItem("temu_chats");
-    const parsed = data ? JSON.parse(data) : {};
+    // Langsung lempar ke Backend
+    socket?.emit("send_message", {
+      chatId: activeChatId,
+      customer: activeChat?.customer,
+      riderId: riderAuth?.id,
+      message: newMessage
+    });
     
-    if (parsed[activeChatId]) {
-      parsed[activeChatId].messages.push(newMessage);
-      localStorage.setItem("temu_chats", JSON.stringify(parsed));
-      window.dispatchEvent(new Event("temu_chat_update"));
-    }
+    setInputText("");
   };
 
   return (

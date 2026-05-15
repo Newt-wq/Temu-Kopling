@@ -6,7 +6,10 @@ import { Send, User, MessageCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import { riders } from "@/lib/riders-data";
+import { io } from "socket.io-client";
+
+// Bikin kabel koneksi ke Server Backend
+const socket = io("http://localhost:5000");
 
 type Message = {
   sender: "customer" | "rider";
@@ -17,7 +20,7 @@ type Message = {
 type ChatSession = {
   chatId: string;
   customer: { id: string; name: string };
-  riderId: number;
+  riderId: string | number;
   riderData: any;
   messages: Message[];
 };
@@ -31,57 +34,105 @@ export default function PesanPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const loadChats = (authData: any) => {
-    const data = localStorage.getItem("temu_chats");
-    if (data) {
-      const parsed = JSON.parse(data);
-      const myChats: ChatSession[] = [];
+  // Fungsi baru untuk menyusun data mentah dari Supabase
+  const formatAndSetChats = (dbMessages: any[], authData: any) => {
+    setChats(prevChats => {
+      // Ambil room yang masih kosong (belum ada pesan di DB)
+      const emptyShells = prevChats.filter(c => c.messages.length === 0);
+      const myChats: ChatSession[] = [...emptyShells];
       
-      Object.keys(parsed).forEach(key => {
-        const session = parsed[key];
-        // Hanya muat chat milik customer ini
-        if (session.customer && session.customer.id === authData.id) {
-          // Cari info rider dari master data
-          const riderData = riders.find(r => r.id === session.riderId);
-          myChats.push({
-            chatId: key,
-            customer: session.customer,
-            riderId: session.riderId,
-            riderData: riderData || { riderName: "Rider Tidak Dikenal", brand: "?", logo: "/brand_coffe/KSJ.png" },
-            messages: session.messages || [],
-          });
+      dbMessages.forEach((row) => {
+        const msgData = row.message_data;
+        
+        // Filter: Hanya ambil pesan milik customer ini
+        if (msgData.customer && msgData.customer.id === authData.id) {
+          // Cek apakah room chat-nya sudah kita buat di array myChats
+          let existingChat = myChats.find(c => c.chatId === msgData.chatId);
+          
+          if (!existingChat) {
+            existingChat = {
+              chatId: msgData.chatId,
+              customer: msgData.customer,
+              riderId: msgData.riderId,
+              riderData: { riderName: "Rider", brand: "Temu Kopling", logo: "/brand_coffe/default.png" },
+              messages: []
+            };
+            myChats.push(existingChat);
+          }
+          
+          // Hindari duplikasi pesan jika ID pesan sama (sementara kita asumsikan urut)
+          existingChat.messages.push(msgData.message);
         }
       });
       
-      setChats(myChats);
-    }
+      return myChats;
+    });
   };
 
-  useEffect(() => {
+
+   useEffect(() => {
     const auth = sessionStorage.getItem("customer_auth");
     if (auth) {
       const parsed = JSON.parse(auth);
       setCustomerAuth(parsed);
       setCheckingAuth(false);
-      loadChats(parsed);
     } else {
       router.replace("/login");
     }
   }, [router]);
 
-  useEffect(() => {
+
+    useEffect(() => {
     if (!customerAuth) return;
-    
-    const handleStorage = () => loadChats(customerAuth);
-    
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("temu_chat_update", handleStorage);
+
+    // Dengarkan riwayat chat
+    socket.on('chat_history_loaded', (data) => {
+      formatAndSetChats(data, customerAuth);
+    });
+
+    // Realtime pesan masuk
+    socket.on('receive_message', () => {
+      socket.emit('request_chat_history');
+    });
+
+    // Minta semua history saat pertama load
+    socket.emit('request_chat_history', null);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("temu_chat_update", handleStorage);
+      socket.off('chat_history_loaded');
+      socket.off('receive_message');
     };
   }, [customerAuth]);
+
+  // Efek untuk membaca parameter URL riderId dan membuka chat baru
+  useEffect(() => {
+    if (typeof window !== "undefined" && customerAuth) {
+      const params = new URLSearchParams(window.location.search);
+      const riderIdParam = params.get("riderId");
+      
+      if (riderIdParam) {
+        const expectedChatId = `chat_${customerAuth.id}_${riderIdParam}`;
+        setActiveChatId(expectedChatId);
+
+        setChats(prevChats => {
+          const existingChat = prevChats.find(c => c.riderId.toString() === riderIdParam);
+          if (existingChat) {
+            return prevChats;
+          } else {
+            // Buat shell kosong
+            return [...prevChats, {
+              chatId: expectedChatId,
+              customer: customerAuth,
+              riderId: riderIdParam,
+              riderData: { riderName: "Rider", brand: "Temu Kopling", logo: "/brand_coffe/default.png" },
+              messages: []
+            }];
+          }
+          return prevChats;
+        });
+      }
+    }
+  }, [customerAuth]); // Dependensi dikurangi agar tidak loop
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,26 +150,25 @@ export default function PesanPage() {
       timestamp: new Date().toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }),
     };
 
-    // Update local state temporarily
-    const updatedChats = chats.map(c => {
+    // Update UI langsung biar terasa cepat (Optimistic UI)
+    setChats(prevChats => prevChats.map(c => {
       if (c.chatId === activeChatId) {
         return { ...c, messages: [...c.messages, newMessage] };
       }
       return c;
-    });
-    setChats(updatedChats);
-    setInputText("");
+    }));
 
-    // Save to localStorage
-    const data = localStorage.getItem("temu_chats");
-    const parsed = data ? JSON.parse(data) : {};
+    // Langsung lempar ke Backend
+    socket.emit("send_message", {
+      chatId: activeChatId,
+      customer: customerAuth,
+      riderId: activeChat?.riderId,
+      message: newMessage
+    });
     
-    if (parsed[activeChatId]) {
-      parsed[activeChatId].messages.push(newMessage);
-      localStorage.setItem("temu_chats", JSON.stringify(parsed));
-      window.dispatchEvent(new Event("temu_chat_update"));
-    }
+    setInputText("");
   };
+
 
   if (checkingAuth) {
     return (

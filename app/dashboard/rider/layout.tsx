@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MapPin, Coffee, ClipboardList, LogOut, Menu, X, MessageCircle } from "lucide-react";
 import Image from "next/image";
 
-type RiderSession = { name: string; brand: string; logo: string; email: string };
+// ============================================================
+// Context: data rider session dibagi ke semua halaman
+// ============================================================
+type RiderSession = { id: string; name: string; brand: string; logo: string; email: string };
 
+type RiderCtx = { riderAuth: RiderSession | null };
+
+export const RiderContext = createContext<RiderCtx>({ riderAuth: null });
+export function useRiderAuth() { return useContext(RiderContext); }
+
+// ============================================================
 const navItems = [
   { label: "Ngetem", href: "/dashboard/rider/ngetem", icon: MapPin },
   { label: "Menu", href: "/dashboard/rider/menu", icon: Coffee },
@@ -15,9 +24,10 @@ const navItems = [
   { label: "Chat", href: "/dashboard/rider/chat", icon: MessageCircle },
 ];
 
-function Sidebar({ rider, onClose, onLogout }: { rider: RiderSession; onClose?: () => void; onLogout: () => void }) {
+function Sidebar({ rider, onClose, onLogout }: {
+  rider: RiderSession; onClose?: () => void; onLogout: () => void;
+}) {
   const pathname = usePathname();
-  const initials = rider.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="flex flex-col h-full">
@@ -38,10 +48,6 @@ function Sidebar({ rider, onClose, onLogout }: { rider: RiderSession; onClose?: 
               <X className="w-5 h-5" />
             </button>
           )}
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 w-fit">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-green-400 text-xs font-semibold">Online</span>
         </div>
       </div>
 
@@ -92,17 +98,16 @@ export default function RiderDashboardLayout({ children }: { children: React.Rea
   // Auth guard
   useEffect(() => {
     const raw = sessionStorage.getItem("rider_auth");
-    if (!raw) {
+    if (!raw) { router.replace("/rider-login"); return; }
+    try {
+      const auth = JSON.parse(raw);
+      setRider(auth);
+      setChecking(false);
+    } catch {
       router.replace("/rider-login");
-    } else {
-      try {
-        setRider(JSON.parse(raw));
-      } catch {
-        router.replace("/rider-login");
-      }
     }
-    setChecking(false);
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("rider_auth");
@@ -111,7 +116,6 @@ export default function RiderDashboardLayout({ children }: { children: React.Rea
 
   const currentPage = navItems.find((n) => pathname.startsWith(n.href))?.label ?? "Dashboard";
 
-  // Loading screen
   if (checking || !rider) {
     return (
       <div className="fixed inset-0 z-[200] bg-[#1A0D06] flex items-center justify-center">
@@ -126,40 +130,42 @@ export default function RiderDashboardLayout({ children }: { children: React.Rea
   const initials = rider.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#F7F3EE] flex overflow-hidden">
-      {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-60 lg:w-64 bg-[#1A0D06] flex-shrink-0">
-        <Sidebar rider={rider} onLogout={handleLogout} />
-      </aside>
+    <RiderContext.Provider value={{ riderAuth: rider }}>
+      <div className="fixed inset-0 z-[200] bg-[#F7F3EE] flex overflow-hidden">
+        {/* Sidebar Desktop */}
+        <aside className="hidden md:flex flex-col w-60 lg:w-64 bg-[#1A0D06] flex-shrink-0">
+          <Sidebar rider={rider} onLogout={handleLogout} />
+        </aside>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-[#1A0D06] shadow-2xl">
-            <Sidebar rider={rider} onClose={() => setSidebarOpen(false)} onLogout={handleLogout} />
-          </aside>
-        </div>
-      )}
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile top bar */}
-        <header className="md:hidden flex items-center justify-between px-5 h-14 bg-white border-b border-zinc-100 flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 text-zinc-700"
-          >
-            <Menu className="w-4 h-4" />
-          </button>
-          <p className="font-bold text-zinc-900 text-sm">{currentPage}</p>
-          <div className="w-9 h-9 rounded-full bg-[#A06C46]/15 flex items-center justify-center">
-            <span className="text-[#A06C46] font-bold text-xs">{initials}</span>
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+            <aside className="absolute left-0 top-0 bottom-0 w-72 bg-[#1A0D06] shadow-2xl">
+              <Sidebar rider={rider} onClose={() => setSidebarOpen(false)} onLogout={handleLogout} />
+            </aside>
           </div>
-        </header>
+        )}
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        {/* Main */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Mobile top bar */}
+          <header className="md:hidden flex items-center justify-between px-5 h-14 bg-white border-b border-zinc-100 flex-shrink-0">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 text-zinc-700"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            <p className="font-bold text-zinc-900 text-sm">{currentPage}</p>
+            <div className="w-9 h-9 rounded-full bg-[#A06C46]/15 flex items-center justify-center">
+              <span className="text-[#A06C46] font-bold text-xs">{initials}</span>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-auto">{children}</main>
+        </div>
       </div>
-    </div>
+    </RiderContext.Provider>
   );
 }

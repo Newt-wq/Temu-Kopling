@@ -3,14 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { Eye, EyeOff, Lock, Mail, Coffee, Info, Loader } from "react-feather";
-
-// Demo credentials — di produksi ganti dengan API auth
-const RIDER_CREDENTIALS = [
-  { id: 1, email: "budi@temukopling.com", password: "rider123", name: "Budi Santoso", brand: "Jago Coffee", logo: "/brand_coffe/Jago.jpeg" },
-  { id: 2, email: "andi@temukopling.com", password: "rider123", name: "Andi Prasetyo", brand: "Kopi Susu Jalanan", logo: "/brand_coffe/KSJ.png" },
-  { id: 3, email: "reza@temukopling.com", password: "rider123", name: "Reza Firmansyah", brand: "Calf", logo: "/brand_coffe/Calf.jpeg" },
-];
+import { supabase } from "@/lib/supabase";
 
 export default function RiderLoginPage() {
   const router = useRouter();
@@ -25,25 +20,40 @@ export default function RiderLoginPage() {
     setError("");
     setLoading(true);
 
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 800));
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-    const match = RIDER_CREDENTIALS.find(
-      (c) => c.email === email.trim().toLowerCase() && c.password === password
-    );
+      if (signInError) throw signInError;
 
-    if (match) {
+      // Ambil profil rider
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, role, brand, logo")
+        .eq("id", data.user.id)
+        .single();
+
+      // Pastikan yang login beneran rider
+      if (profile?.role !== "rider") {
+        throw new Error("Akun ini bukan akun Rider!");
+      }
+
       // Simpan session rider
       sessionStorage.setItem("rider_auth", JSON.stringify({
-        id: match.id,
-        name: match.name,
-        brand: match.brand,
-        logo: match.logo,
-        email: match.email,
+        id: data.user.id,
+        name: profile?.name || "Rider",
+        brand: profile?.brand || "Brand Kopi",
+        logo: profile?.logo || "/brand_coffe/KSJ.png",
+        email: data.user.email,
+        role: "rider"
       }));
+
       router.push("/dashboard/rider/ngetem");
-    } else {
-      setError("Email atau password salah. Coba lagi.");
+    } catch (err: any) {
+      setError(err.message || "Email atau password salah.");
+    } finally {
       setLoading(false);
     }
   };
@@ -136,27 +146,18 @@ export default function RiderLoginPage() {
             </button>
           </form>
 
-          {/* Demo hint as a tooltip icon */}
-          <div className="mt-5 flex justify-center group relative">
-            <div className="flex items-center gap-1.5 text-white/30 hover:text-white/60 transition-colors cursor-help bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-              <Info className="w-3.5 h-3.5" />
-              <span className="text-[11px] font-medium">Info Demo</span>
-            </div>
-            
-            {/* Tooltip Content */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 rounded-xl bg-[#2D1810] border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">
-              <p className="text-white/60 text-[10px] font-semibold mb-1.5 uppercase tracking-wider">Demo Credentials</p>
-              <div className="space-y-1 bg-black/20 p-2 rounded-lg border border-white/5">
-                <p className="text-white/90 text-xs font-mono">budi@temukopling.com</p>
-                <p className="text-white/70 text-xs font-mono mt-1 pt-1 border-t border-white/5">pass: rider123</p>
-              </div>
-              {/* Triangle pointer */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-white/20"></div>
-            </div>
-          </div>
+
+
+          {/* Register Link */}
+          <p className="text-center text-white/30 text-xs mt-6 font-medium">
+            Belum daftar jadi rider?{" "}
+            <Link href="/rider-register" className="text-[#A06C46] hover:text-[#C08050] font-semibold transition-colors">
+              Daftar di sini
+            </Link>
+          </p>
 
           {/* Back */}
-          <p className="text-center text-white/30 text-xs mt-5">
+          <p className="text-center text-white/30 text-xs mt-4">
             Bukan rider?{" "}
             <a href="/" className="text-[#A06C46] hover:text-[#C08050] font-semibold transition-colors">
               Kembali ke beranda

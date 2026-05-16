@@ -70,12 +70,12 @@ export default function RiderLoginPage() {
         throw new Error("Gagal login: Akun ini tidak memiliki hak akses sebagai Rider.");
       }
 
-      // Prioritaskan metadata (selalu up-to-date), fallback ke profiles table
+      // Prioritaskan profil database (karena ini yang bisa di-edit dari Supabase), fallback ke metadata auth
       sessionStorage.setItem("rider_auth", JSON.stringify({
         id: data.user.id,
-        name: meta.name || profile?.name || "Rider",
-        brand: meta.brand || profile?.brand || "Brand Kopi",
-        logo: meta.logo || profile?.logo || "",
+        name: profile?.name || meta.name || "Rider",
+        brand: profile?.brand || meta.brand || "Brand Kopi",
+        logo: profile?.logo || meta.logo || "",
         email: data.user.email,
         role: "rider"
       }));

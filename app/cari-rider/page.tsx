@@ -186,7 +186,29 @@ export default function CariRiderPage() {
 
   // ── FILTER DATA ──────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
+    // BATAS RADIUS TRACKING (5 KM)
+    // Alasan: 
+    // 1. UX/Relevansi: Pelanggan kopi keliling biasanya tidak akan memesan jika jarak rider > 5km karena es akan mencair, kopi jadi dingin, atau waktu tunggu terlalu lama.
+    // 2. Performa: Mencegah map/sidebar terbebani (lag) oleh data rider dari kota lain yang tidak relevan.
+    // 3. Hiper-lokal: Memastikan esensi "kopi keliling" tetap terjaga sebagai layanan di sekitar pelanggan.
+    const MAX_RADIUS_KM = 5; 
+    const R = 6371;
+    const calcDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const dLat = (lat2 - lat1) * Math.PI / 180;  
+      const dLon = (lon2 - lon1) * Math.PI / 180; 
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    };
+
     let result = activeRiders.filter((r) => {
+      // Jika lokasi pelanggan (currentLivePos) diketahui, sembunyikan rider di luar radius 5 km
+      if (currentLivePos) {
+        const dist = calcDist(currentLivePos[0], currentLivePos[1], r.lat, r.lng);
+        if (dist > MAX_RADIUS_KM) return false;
+      }
+
       const matchQuery =
         query === "" ||
         r.brand.toLowerCase().includes(query.toLowerCase()) ||
@@ -196,16 +218,6 @@ export default function CariRiderPage() {
     });
 
     if (activeFilter === "Terdekat" && currentLivePos) {
-      const R = 6371;
-      const calcDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-        const dLat = (lat2 - lat1) * Math.PI / 180;  
-        const dLon = (lon2 - lon1) * Math.PI / 180; 
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                  Math.sin(dLon/2) * Math.sin(dLon/2); 
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-      };
-
       result = result.sort((a, b) => {
         const distA = calcDist(currentLivePos[0], currentLivePos[1], a.lat, a.lng);
         const distB = calcDist(currentLivePos[0], currentLivePos[1], b.lat, b.lng);

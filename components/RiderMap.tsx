@@ -321,10 +321,16 @@ function RiderMapComponent({
     });
   }, [activeRiders, selectedRider, onSelectRider, onOpenMenu, onOpenChat, onOpenMaps, currentLivePos]);
 
-  // Remove the flyTo animation entirely since the user requested the map to stop shifting around
+  // Auto-center map ke rider yang dipilih (redirect effect)
   useEffect(() => {
-    // Intentionally left blank to prevent auto panning.
-    // The Mapbox Popup will now naturally appear next to the pin without moving the map.
+    if (mapRef.current && selectedRider) {
+      mapRef.current.flyTo({
+        center: [selectedRider.lng, selectedRider.lat],
+        zoom: 15,
+        speed: 1.5,
+        curve: 1.2,
+      });
+    }
   }, [selectedRider]);
 
   return (

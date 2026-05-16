@@ -214,6 +214,26 @@ export default function NgetemPage() {
     // Stop GPS watch
     stopGpsWatch();
 
+    const durationMinutes = Math.floor(elapsedSec / 60);
+
+    // Save to history before going offline
+    if (riderPos) {
+      const { error: historyError } = await supabase
+        .from('ngetem_history')
+        .insert({
+          rider_id: riderAuth.id,
+          start_time: new Date(Date.now() - elapsedSec * 1000).toISOString(),
+          end_time: new Date().toISOString(),
+          duration_minutes: durationMinutes,
+          lat: riderPos[0],
+          lng: riderPos[1],
+          landmark: landmark || ""
+        });
+      if (historyError) {
+        console.error("Gagal menyimpan riwayat:", historyError);
+      }
+    }
+
     // Update DB
     await supabase
       .from('active_riders')

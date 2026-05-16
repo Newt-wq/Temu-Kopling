@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { Menu, X, User, LogOut, Settings, ChevronDown, MessageCircle } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-
+import { supabase } from "@/lib/supabase";
 const navLinks = [
   { name: "Beranda", href: "/" },
   { name: "Menu", href: "/#menu" },
@@ -60,7 +60,8 @@ export default function Navbar() {
     }
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     sessionStorage.removeItem("customer_auth");
     setCustomerAuth(null);
     setProfileOpen(false);

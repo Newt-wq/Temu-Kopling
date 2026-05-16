@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MapPin, Coffee, ClipboardList, LogOut, Menu, X, MessageCircle, User, Settings } from "lucide-react";
 import { io, Socket } from "socket.io-client";
+import { supabase } from "@/lib/supabase";
 
 // ============================================================
 // Context: data rider session dibagi ke semua halaman
@@ -154,7 +155,8 @@ export default function RiderDashboardLayout({ children }: { children: React.Rea
     }
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     sessionStorage.removeItem("rider_auth");
     socketRef.current?.disconnect();
     router.push("/rider-login");

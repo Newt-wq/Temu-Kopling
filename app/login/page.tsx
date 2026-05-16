@@ -60,12 +60,13 @@ export default function CustomerLoginPage() {
         throw new Error("Gagal login: Akun ini terdaftar sebagai Rider. Silakan login di halaman Rider.");
       }
 
+      // Prioritaskan profil database (karena ini yang bisa di-edit dari Supabase), fallback ke metadata auth
       sessionStorage.setItem("customer_auth", JSON.stringify({
         id: data.user.id,
-        name: meta.name || profile?.name || "Pelanggan",
+        name: profile?.name || meta.name || "Pelanggan",
         email: data.user.email,
         role: "customer",
-        logo: meta.logo || profile?.logo || ""
+        logo: profile?.logo || meta.logo || ""
       }));
 
       router.push("/cari-rider");

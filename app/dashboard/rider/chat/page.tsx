@@ -79,18 +79,22 @@ export default function RiderChatPage() {
         .select("id, name, logo")
         .in("id", customerIds);
 
+      let finalChats = formed;
       if (profiles) {
-        profiles.forEach((p) => {
-          const chat = formed.find(c => c.customer.id === p.id);
-          if (chat) {
+        const validChats: ChatSession[] = [];
+        formed.forEach((chat) => {
+          const p = profiles.find(x => x.id === chat.customer.id);
+          if (p) {
             chat.customer = { ...chat.customer, name: p.name || chat.customer.name, logo: p.logo || "" };
+            validChats.push(chat);
           }
         });
+        finalChats = validChats;
       }
 
       setChats(prev => {
         // Preserve customer data yang sudah didapat dari live events
-        const mergedFormed = formed.map(f => {
+        const mergedFormed = finalChats.map(f => {
           const existing = prev.find(p => p.chatId === f.chatId);
           if (existing && existing.customer && existing.customer.name !== "Pelanggan") {
             return { ...f, customer: existing.customer };

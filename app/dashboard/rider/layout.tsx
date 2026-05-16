@@ -36,11 +36,13 @@ function Sidebar({ rider, unreadChat, onClose, onLogout }: {
       <div className="px-5 pt-6 pb-5 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#A06C46] flex-shrink-0 bg-[#A06C46]/20 flex items-center justify-center">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-[#A06C46] flex-shrink-0 flex items-center justify-center">
               {rider.logo ? (
-                <img src={rider.logo} alt={rider.brand} className="w-full h-full object-contain p-1" />
+                <img src={rider.logo} alt={rider.brand} className="w-full h-full object-contain p-0.5" />
               ) : (
-                <Coffee className="w-5 h-5 text-[#A06C46]" />
+                <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                  <Coffee className="w-5 h-5 text-white/70" />
+                </div>
               )}
             </div>
             <div>

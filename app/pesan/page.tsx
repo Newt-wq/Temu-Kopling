@@ -106,12 +106,15 @@ export default function PesanPage() {
           .in("id", uniqueRiderIds);
 
         if (profiles) {
-          profiles.forEach((p) => {
-            const chat = formed.find(c => c.riderId.toString() === p.id);
-            if (chat) {
+          const validChats: ChatSession[] = [];
+          formed.forEach((chat) => {
+            const p = profiles.find(x => x.id === chat.riderId.toString());
+            if (p) {
               chat.riderData = { riderName: p.name, brand: p.brand || "Temu Kopling", logo: p.logo || "" };
+              validChats.push(chat);
             }
           });
+          return validChats;
         }
       }
 

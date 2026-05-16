@@ -394,9 +394,9 @@ export default function CariRiderPage() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-base shadow-sm border-2 overflow-hidden \${
+                      <div className={`w-12 h-12 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-base shadow-sm border-2 overflow-hidden ${
                         isSelected
-                          ? "bg-[#5C3D2E] text-white border-[#5C3D2E]"
+                          ? "bg-white text-[#5C3D2E] border-[#5C3D2E]"
                           : "bg-[#FAF8F5] text-[#5C3D2E] border-[#E8DCCB]"
                       }`}>
                         {rider.logo ? (

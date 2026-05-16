@@ -12,10 +12,11 @@ type Props = {
   isNgetem: boolean;
   riderPos: [number, number] | null; // [lat, lng]
   riderLogo?: string;
+  riderName?: string;
   currentLivePos?: [number, number] | null;
 };
 
-function NgetemMapComponent({ isNgetem, riderPos, riderLogo, currentLivePos }: Props) {
+function NgetemMapComponent({ isNgetem, riderPos, riderLogo, riderName = "Rider", currentLivePos }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const markerRef = useRef<MapboxMarker | null>(null);
@@ -89,7 +90,7 @@ function NgetemMapComponent({ isNgetem, riderPos, riderLogo, currentLivePos }: P
 
     const size = 56;
     const color = "#5C3D2E";
-    const logoUrl = riderLogo || "/brand_coffe/default.png";
+    const logoUrl = riderLogo === "/brand_coffe/default.png" ? "" : (riderLogo || "");
 
     if (!markerRef.current) {
       const el = document.createElement("div");
@@ -105,7 +106,12 @@ function NgetemMapComponent({ isNgetem, riderPos, riderLogo, currentLivePos }: P
           overflow:hidden;
           animation:ngetem-pulse 2s infinite;
         ">
-          <img src="${logoUrl}" style="width:80%;height:80%;object-fit:contain;border-radius:50%;" onerror="this.src='/brand_coffe/default.png'" />
+        ${logoUrl ? 
+          `<img src="${logoUrl}" style="width:80%;height:80%;object-fit:contain;border-radius:50%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+           <span style="display:none;font-size:18px;font-weight:700;color:#5C3D2E;">${riderName[0] || 'R'}</span>`
+        :
+          `<span style="font-size:18px;font-weight:700;color:#5C3D2E;">${riderName[0] || 'R'}</span>`
+        }
         </div>
         <div style="
           width:0;height:0;

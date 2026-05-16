@@ -254,6 +254,7 @@ export default function NgetemPage() {
           isNgetem={isNgetem}
           riderPos={riderPos}
           riderLogo={riderAuth?.logo}
+          riderName={riderAuth?.name || "Rider"}
           currentLivePos={currentLivePos}
         />
       </div>

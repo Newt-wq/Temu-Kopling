@@ -28,19 +28,44 @@ export default function CustomerLoginPage() {
 
       if (signInError) throw signInError;
 
-      // Ambil profil untuk dapetin nama (optional tapi bagus untuk UI)
-      const { data: profile } = await supabase
+      // Ambil profil untuk dapetin nama dan logo
+      let { data: profile } = await supabase
         .from("profiles")
-        .select("name, role")
+        .select("name, role, logo")
         .eq("id", data.user.id)
         .single();
 
-      // Simpan state auth di sessionStorage (agar format lama tetap jalan sementara)
+      // Jika profil belum ada di table (mungkin pendaftaran sebelumnya gagal sinkron)
+      if (!profile && data.user) {
+        const metadata = data.user.user_metadata;
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            name: metadata?.name || "Pelanggan",
+            role: "customer"
+          })
+          .select()
+          .single();
+        
+        if (!createError) profile = newProfile;
+      }
+
+      const meta = data.user.user_metadata || {};
+      const role = profile?.role || meta.role || "customer";
+
+      if (role === "rider") {
+        await supabase.auth.signOut();
+        throw new Error("Gagal login: Akun ini terdaftar sebagai Rider. Silakan login di halaman Rider.");
+      }
+
       sessionStorage.setItem("customer_auth", JSON.stringify({
         id: data.user.id,
-        name: profile?.name || "Pelanggan",
+        name: meta.name || profile?.name || "Pelanggan",
         email: data.user.email,
-        role: profile?.role || "customer"
+        role: "customer",
+        logo: meta.logo || profile?.logo || ""
       }));
 
       router.push("/cari-rider");

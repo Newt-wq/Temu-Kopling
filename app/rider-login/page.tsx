@@ -29,23 +29,53 @@ export default function RiderLoginPage() {
       if (signInError) throw signInError;
 
       // Ambil profil rider
-      const { data: profile } = await supabase
+      let { data: profile } = await supabase
         .from("profiles")
         .select("name, role, brand, logo")
         .eq("id", data.user.id)
         .single();
 
-      // Pastikan yang login beneran rider
-      if (profile?.role !== "rider") {
-        throw new Error("Akun ini bukan akun Rider!");
+      // Jika profil belum ada di table tapi metadata auth ada
+      if (!profile && data.user) {
+        const metadata = data.user.user_metadata;
+        // Pastikan role-nya memang rider di metadata
+        if (metadata?.role === "rider") {
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .upsert({
+              id: data.user.id,
+              email: data.user.email,
+              name: metadata?.name || "Rider",
+              role: "rider",
+              brand: metadata?.brand || "Brand Kopi",
+              logo: metadata?.logo || ""
+            })
+            .select()
+            .single();
+          
+          if (!createError) profile = newProfile;
+        }
       }
 
-      // Simpan session rider
+      const meta = data.user.user_metadata || {};
+      const role = profile?.role || meta.role || "rider";
+
+      if (role === "customer") {
+        await supabase.auth.signOut();
+        throw new Error("Gagal login: Akun ini terdaftar sebagai Customer. Silakan login di halaman beranda.");
+      }
+
+      if (role !== "rider") {
+        await supabase.auth.signOut();
+        throw new Error("Gagal login: Akun ini tidak memiliki hak akses sebagai Rider.");
+      }
+
+      // Prioritaskan metadata (selalu up-to-date), fallback ke profiles table
       sessionStorage.setItem("rider_auth", JSON.stringify({
         id: data.user.id,
-        name: profile?.name || "Rider",
-        brand: profile?.brand || "Brand Kopi",
-        logo: profile?.logo || "/brand_coffe/KSJ.png",
+        name: meta.name || profile?.name || "Rider",
+        brand: meta.brand || profile?.brand || "Brand Kopi",
+        logo: meta.logo || profile?.logo || "",
         email: data.user.email,
         role: "rider"
       }));

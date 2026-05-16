@@ -46,6 +46,25 @@ export default function RegisterPage() {
         throw signUpError;
       }
 
+      // 1. Pastikan data user ada
+      if (data.user) {
+        // 2. Insert ke table profiles (manual sync)
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            name: name,
+            role: "customer"
+          });
+        
+        if (profileError) {
+          console.error("Gagal membuat profil:", profileError.message);
+          // Kita abaikan saja jika error (misal karena trigger sudah jalan) 
+          // yang penting Auth-nya sudah berhasil.
+        }
+      }
+
       setSuccess("Pendaftaran berhasil! Silakan login.");
       setTimeout(() => {
         router.push("/login");

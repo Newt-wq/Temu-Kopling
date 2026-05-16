@@ -40,13 +40,32 @@ export default function RiderRegisterPage() {
             name: name,
             role: "rider", // Set sebagai rider
             brand: brand,
-            logo: "/brand_coffe/default.png" // default logo
+            logo: "" // default logo removed, fallback to initials
           },
         },
       });
 
       if (signUpError) {
         throw signUpError;
+      }
+
+      // 1. Pastikan data user ada
+      if (data.user) {
+        // 2. Insert ke table profiles (manual sync)
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            name: name,
+            role: "rider",
+            brand: brand,
+            logo: "" // default logo removed
+          });
+        
+        if (profileError) {
+          console.error("Gagal membuat profil rider:", profileError.message);
+        }
       }
 
       setSuccess("Pendaftaran Rider berhasil! Silakan login.");

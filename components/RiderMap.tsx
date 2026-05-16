@@ -82,9 +82,8 @@ function RiderMapComponent({
   onOpenChat,
   onOpenMaps
 }: Props) {
-  // Helper to calculate distance in km
   const getDistanceText = (lat1?: number, lon1?: number, lat2?: number, lon2?: number) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return "Jarak belum diketahui";
+    if (!lat1 || !lon1 || !lat2 || !lon2) return "Belum diketahui";
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;  
     const dLon = (lon2 - lon1) * Math.PI / 180; 
@@ -92,7 +91,7 @@ function RiderMapComponent({
               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
               Math.sin(dLon/2) * Math.sin(dLon/2); 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-    return `Jarak <b>\${(R * c).toFixed(1)} km</b> dari kamu`;
+    return `${(R * c).toFixed(1)} km`;
   };
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -248,7 +247,9 @@ function RiderMapComponent({
                 <svg class="flex-shrink-0 text-[#A06C46]" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               </div>
               <span class="text-xs font-medium text-zinc-600">
-                Jaraknya sekitar <span class="font-bold text-zinc-800">${distText}</span> dari lokasimu
+                ${distText === "Belum diketahui" 
+                  ? "Jarak <span class=\"font-bold text-zinc-800\">belum diketahui</span>" 
+                  : `Jaraknya sekitar <span class="font-bold text-zinc-800">${distText}</span> dari lokasimu`}
               </span>
             </div>
           </div>

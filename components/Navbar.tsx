@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, User, LogOut, Settings, ChevronDown, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { io, Socket } from "socket.io-client";
 
 const navLinks = [
   { name: "Beranda", href: "/" },
@@ -18,20 +19,52 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [customerAuth, setCustomerAuth] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     setMounted(true);
     const auth = sessionStorage.getItem("customer_auth");
     if (auth) {
-      setCustomerAuth(JSON.parse(auth));
+      const parsed = JSON.parse(auth);
+      setCustomerAuth(parsed);
+
+      // Join room notifikasi pribadi
+      const socket = io("http://localhost:5000");
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        socket.emit("join_user_room", parsed.id);
+      });
+
+      socket.on("new_notification", () => {
+        // Jangan increment kalau sedang di halaman /pesan
+        if (!window.location.pathname.startsWith("/pesan")) {
+          setUnreadCount((c) => c + 1);
+        }
+      });
+
+      return () => {
+        socket.off("new_notification");
+        socket.disconnect();
+      };
     }
   }, []);
+
+  // Reset badge saat buka halaman pesan
+  useEffect(() => {
+    if (pathname?.startsWith("/pesan")) {
+      setUnreadCount(0);
+    }
+  }, [pathname]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("customer_auth");
     setCustomerAuth(null);
     setProfileOpen(false);
+    socketRef.current?.disconnect();
     router.push("/");
   };
 
@@ -68,27 +101,38 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Kanan: Login/Profile (Desktop) + Hamburger (Mobile) */}
+        {/* Kanan */}
         <div className="flex items-center gap-3">
-          
           {mounted && customerAuth ? (
             <div className="hidden md:flex items-center gap-2 relative">
+              {/* Tombol Chat dengan Badge */}
               <Link
                 href="/pesan"
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-50 text-zinc-600 hover:bg-zinc-100 hover:text-[#5C3D2E] transition-colors"
+                className="relative w-10 h-10 flex items-center justify-center rounded-full bg-zinc-50 text-zinc-600 hover:bg-zinc-100 hover:text-[#5C3D2E] transition-colors"
                 title="Riwayat Pesan"
+                onClick={() => setUnreadCount(0)}
               >
                 <MessageCircle className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
-              <button 
+
+              <button
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full border border-zinc-200 hover:border-[#5C3D2E]/50 hover:bg-zinc-50 transition-colors"
               >
                 <span className="text-sm font-semibold text-zinc-700 truncate max-w-[100px]">
                   {customerAuth.name.split(" ")[0]}
                 </span>
-                <div className="w-7 h-7 rounded-full bg-[#5C3D2E] flex items-center justify-center text-white">
-                  <span className="text-xs font-bold">{customerAuth.name.charAt(0)}</span>
+                <div className="w-7 h-7 rounded-full bg-[#5C3D2E] overflow-hidden flex items-center justify-center">
+                  {customerAuth.logo ? (
+                    <img src={customerAuth.logo} alt={customerAuth.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-white" />
+                  )}
                 </div>
                 <ChevronDown className="w-4 h-4 text-zinc-400" />
               </button>
@@ -102,7 +146,7 @@ export default function Navbar() {
                       <p className="text-sm font-bold text-zinc-900 truncate">{customerAuth.name}</p>
                       <p className="text-xs text-zinc-500 truncate">{customerAuth.email}</p>
                     </div>
-                    <Link 
+                    <Link
                       href="/edit-profil"
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
@@ -110,7 +154,7 @@ export default function Navbar() {
                       <Settings className="w-4 h-4 text-zinc-400" />
                       Edit Profil
                     </Link>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
                     >
@@ -143,12 +187,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
+      {/* Mobile Menu */}
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="bg-white border-t border-zinc-100 px-6 py-4 flex flex-col gap-1">
           {navLinks.map((link) => (
             <Link
@@ -161,13 +201,16 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Login / Profile di mobile menu */}
           <div className="pt-4 mt-2 border-t border-zinc-100">
             {mounted && customerAuth ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 px-4 py-3 bg-zinc-50 rounded-xl mb-2">
-                  <div className="w-10 h-10 rounded-full bg-[#5C3D2E] flex items-center justify-center text-white flex-shrink-0">
-                    <span className="text-sm font-bold">{customerAuth.name.charAt(0)}</span>
+                  <div className="w-10 h-10 rounded-full bg-[#5C3D2E] flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {customerAuth.logo ? (
+                      <img src={customerAuth.logo} alt={customerAuth.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-5 h-5 text-white" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-zinc-900 truncate">{customerAuth.name}</p>
@@ -176,10 +219,17 @@ export default function Navbar() {
                 </div>
                 <Link
                   href="/pesan"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => { setMobileOpen(false); setUnreadCount(0); }}
                   className="flex items-center gap-3 w-full py-3 px-4 rounded-xl text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-all"
                 >
-                  <MessageCircle className="w-5 h-5 text-zinc-400" />
+                  <div className="relative">
+                    <MessageCircle className="w-5 h-5 text-zinc-400" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   Riwayat Pesan
                 </Link>
                 <Link

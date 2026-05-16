@@ -43,7 +43,7 @@ const RiderMap = dynamic(() => import("@/components/RiderMap"), {
   ),
 });
 
-const brandFilters = ["Semua", "Jago Coffee", "Kopi Susu Jalanan", "Calf"];
+const filtersList = ["Semua", "Terdekat"];
 
 export default function CariRiderPage() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function CariRiderPage() {
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
   
   const [query, setQuery] = useState("");
-  const [activeBrand, setActiveBrand] = useState("Semua");
+  const [activeFilter, setActiveFilter] = useState("Semua");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
@@ -60,6 +60,17 @@ export default function CariRiderPage() {
   const [showMenuOverlay, setShowMenuOverlay] = useState(false);
   const [menus, setMenus] = useState<MenuType[]>([]);
   const [loadingMenus, setLoadingMenus] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // ── AUTH GUARD ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const auth = sessionStorage.getItem("customer_auth");
+    if (!auth) {
+      router.replace("/login");
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [router]);
 
   // Background GPS Tracker
   const [currentLivePos, setCurrentLivePos] = useState<[number, number] | null>(null);
@@ -175,16 +186,35 @@ export default function CariRiderPage() {
 
   // ── FILTER DATA ──────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    return activeRiders.filter((r) => {
-      const matchBrand = activeBrand === "Semua" || r.brand === activeBrand;
+    let result = activeRiders.filter((r) => {
       const matchQuery =
         query === "" ||
         r.brand.toLowerCase().includes(query.toLowerCase()) ||
         r.name.toLowerCase().includes(query.toLowerCase()) ||
         (r.landmark || "").toLowerCase().includes(query.toLowerCase());
-      return matchBrand && matchQuery;
+      return matchQuery;
     });
-  }, [query, activeBrand, activeRiders]);
+
+    if (activeFilter === "Terdekat" && currentLivePos) {
+      const R = 6371;
+      const calcDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const dLat = (lat2 - lat1) * Math.PI / 180;  
+        const dLon = (lon2 - lon1) * Math.PI / 180; 
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                  Math.sin(dLon/2) * Math.sin(dLon/2); 
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      };
+
+      result = result.sort((a, b) => {
+        const distA = calcDist(currentLivePos[0], currentLivePos[1], a.lat, a.lng);
+        const distB = calcDist(currentLivePos[0], currentLivePos[1], b.lat, b.lng);
+        return distA - distB;
+      });
+    }
+
+    return result;
+  }, [query, activeFilter, activeRiders, currentLivePos]);
 
   // ── HANDLERS ─────────────────────────────────────────────────────────────
   const handleSelectRider = useCallback((rider: Rider | null) => {
@@ -205,6 +235,18 @@ export default function CariRiderPage() {
     if (!targetRider) return;
     router.push(`/pesan?riderId=${targetRider.id}`);
   }, [router, selectedRider]);
+
+  const getDistanceText = (lat1?: number, lon1?: number, lat2?: number, lon2?: number) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return "Belum diketahui";
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;  
+    const dLon = (lon2 - lon1) * Math.PI / 180; 
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return `${(R * c).toFixed(1)} km`;
+  };
 
   const fetchMenu = useCallback(async (rider?: Rider) => {
     const targetRider = rider || selectedRider;
@@ -233,6 +275,15 @@ export default function CariRiderPage() {
     }
   }, [selectedRider]);
 
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#5C3D2E] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-zinc-500 font-medium">Memverifikasi sesi...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -285,19 +336,19 @@ export default function CariRiderPage() {
               )}
             </div>
 
-            {/* Brand Filter */}
+            {/* Filter */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-              {brandFilters.map((brand) => (
+              {filtersList.map((filterName) => (
                 <button
-                  key={brand}
-                  onClick={() => setActiveBrand(brand)}
-                  className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-200 \${
-                    activeBrand === brand
-                      ? "bg-[#5C3D2E] text-white border-[#5C3D2E]"
-                      : "bg-white text-zinc-600 border-zinc-200 hover:border-[#5C3D2E]/50"
+                  key={filterName}
+                  onClick={() => setActiveFilter(filterName)}
+                  className={`flex-shrink-0 text-xs font-bold px-4 py-1.5 rounded-full border transition-all duration-200 ${
+                    activeFilter === filterName
+                      ? "bg-[#FAF8F5] text-[#5C3D2E] border-[#5C3D2E]"
+                      : "bg-white text-zinc-500 border-zinc-200 hover:text-zinc-700"
                   }`}
                 >
-                  {brand}
+                  {filterName}
                 </button>
               ))}
             </div>
@@ -324,9 +375,9 @@ export default function CariRiderPage() {
                   <button
                     key={rider.id}
                     onClick={() => handleSelectRider(rider)}
-                    className={`w-full text-left rounded-2xl border p-3.5 transition-all duration-200 group \${
+                    className={`w-full text-left rounded-2xl border p-3.5 transition-all duration-200 group ${
                       isSelected
-                        ? "border-[#5C3D2E] bg-[#5C3D2E]/5 shadow-sm"
+                        ? "border-[#5C3D2E] ring-1 ring-[#5C3D2E] bg-white shadow-sm"
                         : "border-zinc-200 bg-white hover:border-[#A06C46]/40 hover:shadow-sm"
                     }`}
                   >
@@ -359,7 +410,7 @@ export default function CariRiderPage() {
                         <div className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-zinc-400 flex-shrink-0" />
                           <p className="text-[11px] text-zinc-500 truncate">
-                            {rider.landmark || "Menunggu di lokasi"}
+                            {currentLivePos ? `Berjarak ${getDistanceText(currentLivePos[0], currentLivePos[1], rider.lat, rider.lng)}` : "Mencari lokasi Anda..."}
                           </p>
                         </div>
                       </div>

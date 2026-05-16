@@ -6,6 +6,9 @@ import { Rider } from "@/app/cari-rider/page";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
+type MapboxMap = InstanceType<typeof mapboxgl.Map>;
+type MapboxMarker = InstanceType<typeof mapboxgl.Marker>;
+
 type Props = {
   activeRiders: Rider[];
   selectedRider: Rider | null;
@@ -92,8 +95,8 @@ function RiderMapComponent({
     return `Jarak <b>\${(R * c).toFixed(1)} km</b> dari kamu`;
   };
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Map<string, { marker: mapboxgl.Marker; el: HTMLElement }>>(new Map());
+  const mapRef = useRef<MapboxMap | null>(null);
+  const markersRef = useRef<Map<string, { marker: MapboxMarker; el: HTMLElement }>>(new Map());
   const hasInitialLivePosCenteredRef = useRef(false);
 
   // ── Init map ─────────────────────────────────────────────────────────────
@@ -297,7 +300,7 @@ function RiderMapComponent({
         popup.on('close', () => {
            // Provide a slight delay so clicking another marker doesn't immediately set to null then quickly back
            setTimeout(() => {
-             if (existing && !existing.marker.getPopup().isOpen()) onSelectRider(null);
+             if (!popup.isOpen()) onSelectRider(null);
            }, 100);
         });
         

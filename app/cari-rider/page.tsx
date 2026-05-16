@@ -194,19 +194,22 @@ export default function CariRiderPage() {
     if (rider) setSidebarOpen(false); // Auto close sidebar on mobile
   }, []);
 
-  const openGoogleMaps = useCallback(() => {
-    if (!selectedRider) return;
-    const url = `https://www.google.com/maps?daddr=${selectedRider.lat},${selectedRider.lng}`;
+  const openGoogleMaps = useCallback((rider?: Rider) => {
+    const targetRider = rider || selectedRider;
+    if (!targetRider) return;
+    const url = `https://www.google.com/maps?daddr=${targetRider.lat},${targetRider.lng}`;
     window.open(url, "_blank");
   }, [selectedRider]);
 
-  const openChat = useCallback(() => {
-    if (!selectedRider) return;
-    router.push(`/pesan?riderId=${selectedRider.id}`);
+  const openChat = useCallback((rider?: Rider) => {
+    const targetRider = rider || selectedRider;
+    if (!targetRider) return;
+    router.push(`/pesan?riderId=${targetRider.id}`);
   }, [router, selectedRider]);
 
-  const fetchMenu = useCallback(async () => {
-    if (!selectedRider) return;
+  const fetchMenu = useCallback(async (rider?: Rider) => {
+    const targetRider = rider || selectedRider;
+    if (!targetRider) return;
     setShowMenuOverlay(true);
     setLoadingMenus(true);
     
@@ -214,7 +217,7 @@ export default function CariRiderPage() {
       const { data, error } = await supabase
         .from('menus')
         .select('*')
-        .eq('rider_id', selectedRider.id)
+        .eq('rider_id', targetRider.id)
         .order('available', { ascending: false })
         .order('name', { ascending: true });
 
@@ -391,9 +394,9 @@ export default function CariRiderPage() {
               selectedRider={selectedRider}
               onSelectRider={handleSelectRider}
               currentLivePos={currentLivePos}
-              onOpenMenu={() => fetchMenu()}
-              onOpenChat={() => openChat()}
-              onOpenMaps={() => openGoogleMaps()}
+              onOpenMenu={fetchMenu}
+              onOpenChat={openChat}
+              onOpenMaps={openGoogleMaps}
             />
           </div>
 
@@ -401,65 +404,108 @@ export default function CariRiderPage() {
 
 
 
-          {/* ===== OVERLAY MENU (Premium Glassmorphism) ===== */}
+          {/* ===== OVERLAY MENU (Ultra Premium Bottom Sheet) ===== */}
           {selectedRider && showMenuOverlay && (
-            <div className="absolute bottom-0 left-0 right-0 h-[75vh] md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-[420px] md:h-auto md:max-h-[85vh] z-40 flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-300">
-              <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-xl rounded-t-[32px] md:rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-t border-x md:border-b border-white/60 overflow-hidden ring-1 ring-[#5C3D2E]/5">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-[#E8DCCB]/60 bg-white/50 shrink-0">
-                  <button 
-                    onClick={() => setShowMenuOverlay(false)} 
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-100/80 text-zinc-600 hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5 -ml-0.5" />
-                  </button>
-                  <div className="text-center">
-                    <p className="font-extrabold text-zinc-900 text-base leading-tight">Menu Tersedia</p>
-                    <p className="text-[11px] font-bold text-[#A06C46] mt-0.5 uppercase tracking-wider">{selectedRider.brand}</p>
-                  </div>
-                  <div className="w-9" /> {/* Spacer */}
+            <div className="absolute inset-0 z-[100] flex items-end md:items-center justify-center pointer-events-none">
+              {/* Backdrop */}
+              <div 
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity duration-300 animate-in fade-in"
+                onClick={() => setShowMenuOverlay(false)}
+              />
+              
+              {/* Content Panel */}
+              <div className="relative w-full h-[85vh] md:h-[650px] md:w-[480px] bg-[#FAF8F5] rounded-t-[32px] md:rounded-[32px] shadow-2xl pointer-events-auto flex flex-col overflow-hidden animate-in slide-in-from-bottom-full md:slide-in-from-bottom-8 md:fade-in duration-300 ease-out border border-[#E8DCCB]/50">
+                {/* Drag Handle (Mobile) */}
+                <div className="md:hidden flex justify-center pt-3 pb-2 bg-white rounded-t-[32px] shrink-0">
+                  <div className="w-12 h-1.5 bg-zinc-200 rounded-full" />
                 </div>
 
-                {/* Body */}
+                {/* Premium Header */}
+                <div className="relative px-6 py-4 flex items-center justify-between border-b border-zinc-100 bg-white/95 backdrop-blur-md z-10 shrink-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-zinc-100 shadow-sm bg-white p-1">
+                      {selectedRider.logo ? (
+                        <img src={selectedRider.logo} alt={selectedRider.brand} className="w-full h-full object-contain" onError={(e) => (e.currentTarget.src = '/brand_coffe/KSJ.png')} />
+                      ) : (
+                        <div className="w-full h-full bg-[#5C3D2E] text-white flex items-center justify-center font-bold text-lg">
+                          {selectedRider.name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-extrabold text-zinc-900 tracking-tight leading-none mb-1 truncate max-w-[200px]">{selectedRider.name}</h2>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-[#A06C46] bg-[#A06C46]/10 px-2 py-0.5 rounded-full">{selectedRider.brand}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowMenuOverlay(false)} 
+                    className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Body Content */}
                 <div className="flex-1 overflow-y-auto p-5">
+                  <div className="mb-5 flex items-end justify-between">
+                    <div>
+                      <h3 className="font-extrabold text-zinc-900 text-lg">Eksplorasi Menu</h3>
+                      <p className="text-[13px] text-zinc-500 font-medium mt-0.5">Disajikan segar langsung dari motor</p>
+                    </div>
+                    {menus.length > 0 && (
+                      <span className="text-[11px] font-bold text-zinc-400 bg-white px-2.5 py-1 rounded-full border border-zinc-200 shadow-sm">
+                        {menus.filter(m => m.available && m.stock > 0).length} Tersedia
+                      </span>
+                    )}
+                  </div>
+
                   {loadingMenus ? (
-                    <div className="flex flex-col items-center justify-center h-48">
-                      <div className="w-10 h-10 border-4 border-[#5C3D2E] border-t-transparent rounded-full animate-spin mb-3" />
-                      <p className="text-sm font-bold text-zinc-500">Memuat menu...</p>
+                    <div className="flex flex-col items-center justify-center h-48 space-y-4">
+                      <div className="w-10 h-10 border-4 border-[#A06C46]/30 border-t-[#5C3D2E] rounded-full animate-spin" />
+                      <p className="text-sm font-semibold text-zinc-500">Mencari menu terenak...</p>
                     </div>
                   ) : menus.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-center px-4">
-                      <div className="w-16 h-16 rounded-2xl bg-[#FAF8F5] border border-[#E8DCCB] flex items-center justify-center mb-4">
-                        <Coffee className="w-8 h-8 text-zinc-300" />
+                    <div className="flex flex-col items-center justify-center h-48 text-center bg-white rounded-[24px] border border-dashed border-zinc-200 p-6 shadow-sm">
+                      <div className="w-14 h-14 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-3">
+                        <Coffee className="w-6 h-6 text-zinc-300" />
                       </div>
-                      <p className="text-base font-bold text-zinc-800 mb-1">Menu belum tersedia</p>
-                      <p className="text-xs text-zinc-500 leading-relaxed">Rider ini belum menambahkan menu ke katalog mereka.</p>
+                      <p className="font-bold text-zinc-700 mb-1">Yah, belum ada menu</p>
+                      <p className="text-[13px] text-zinc-400 max-w-[250px] leading-relaxed">Rider ini belum mengatur daftar menu jualannya di aplikasi.</p>
                     </div>
                   ) : (
-                    <div className="space-y-3.5">
+                    <div className="space-y-4 pb-8">
                       {menus.map(menu => (
-                        <div key={menu.id} className={`bg-white/80 backdrop-blur-sm p-3.5 rounded-2xl border flex gap-3.5 shadow-sm hover:shadow-md transition-all duration-300 group \${!menu.available || menu.stock <= 0 ? 'opacity-50 border-zinc-200 grayscale-[0.5]' : 'border-[#E8DCCB]/60 hover:border-[#A06C46]/30 hover:-translate-y-0.5'}`}>
-                          <div className="w-24 h-24 rounded-xl bg-[#FAF8F5] border border-[#E8DCCB]/40 flex-shrink-0 flex items-center justify-center overflow-hidden relative shadow-inner">
+                        <div 
+                          key={menu.id} 
+                          className={`group bg-white rounded-[20px] p-3 flex gap-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-300 hover:shadow-[0_8px_20px_rgba(160,108,70,0.08)] border border-transparent \${!menu.available || menu.stock <= 0 ? 'opacity-60 grayscale-[0.3]' : 'hover:border-[#E8DCCB] cursor-pointer'}`}
+                        >
+                          <div className="relative w-[110px] h-[110px] rounded-2xl bg-[#FAF8F5] border border-zinc-100 overflow-hidden flex-shrink-0 shadow-inner">
                             {menu.image_url ? (
-                              <img src={menu.image_url} alt={menu.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                              <img src={menu.image_url} alt={menu.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                             ) : (
-                              <Coffee className="w-8 h-8 text-[#E8DCCB]" />
+                              <div className="w-full h-full flex items-center justify-center bg-zinc-50">
+                                <Coffee className="w-8 h-8 text-zinc-200" />
+                              </div>
                             )}
                             {(!menu.available || menu.stock <= 0) && (
-                              <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] flex items-center justify-center">
-                                <span className="bg-red-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg">HABIS</span>
+                              <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                                <span className="bg-zinc-800 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">HABIS</span>
                               </div>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 flex flex-col py-1">
-                            <h3 className="font-bold text-sm text-zinc-900 leading-tight mb-1">{menu.name}</h3>
-                            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed mb-2">{menu.description}</p>
-                            <div className="flex items-end justify-between mt-auto">
-                              <span className="font-extrabold text-[#5C3D2E] text-sm">Rp {menu.price.toLocaleString('id-ID')}</span>
+                          
+                          <div className="flex flex-col flex-1 py-1.5 pr-1">
+                            <h4 className="font-extrabold text-zinc-900 text-[15px] leading-tight mb-1 group-hover:text-[#5C3D2E] transition-colors">{menu.name}</h4>
+                            <p className="text-[12px] text-zinc-500 line-clamp-2 leading-relaxed flex-1">{menu.description}</p>
+                            
+                            <div className="flex items-end justify-between mt-3">
+                              <span className="font-black text-[#5C3D2E] text-base tracking-tight">Rp {menu.price.toLocaleString('id-ID')}</span>
+                              
                               {menu.available && menu.stock > 0 && (
-                                <span className="text-[10px] font-bold text-[#A06C46] bg-[#A06C46]/10 px-2 py-1 rounded-lg">
-                                  Sisa {menu.stock}
+                                <span className="text-[10px] font-bold text-[#A06C46] bg-[#A06C46]/10 px-2 py-1 rounded-lg border border-[#A06C46]/20">
+                                  Tersedia
                                 </span>
                               )}
                             </div>

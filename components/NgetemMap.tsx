@@ -5,6 +5,9 @@ import mapboxgl from "mapbox-gl";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
+type MapboxMap = InstanceType<typeof mapboxgl.Map>;
+type MapboxMarker = InstanceType<typeof mapboxgl.Marker>;
+
 type Props = {
   isNgetem: boolean;
   riderPos: [number, number] | null; // [lat, lng]
@@ -14,8 +17,8 @@ type Props = {
 
 function NgetemMapComponent({ isNgetem, riderPos, riderLogo, currentLivePos }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<MapboxMap | null>(null);
+  const markerRef = useRef<MapboxMarker | null>(null);
   const hasCenteredRef = useRef(false);
   const hasInitialLivePosCenteredRef = useRef(false);
 

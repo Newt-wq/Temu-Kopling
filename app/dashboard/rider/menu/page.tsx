@@ -118,32 +118,48 @@ export default function MenuPage() {
 
   const fetchMenus = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("menus")
-      .select("*")
-      .eq("rider_id", riderAuth!.id)
-      .order("name");
-      
-    if (!error && data) {
-      setMenus(data);
+    try {
+      const res = await fetch(`http://localhost:5000/api/menus/${riderAuth!.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMenus(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch menus", err);
     }
     setLoading(false);
   };
 
   const handleToggle = async (id: string, current: boolean) => {
     setActionLoading(true);
-    const { error } = await supabase.from("menus").update({ available: !current }).eq("id", id);
-    if (!error) {
-      setMenus(prev => prev.map(m => m.id === id ? { ...m, available: !current } : m));
+    try {
+      const res = await fetch(`http://localhost:5000/api/menus/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ available: !current })
+      });
+      if (res.ok) {
+        setMenus(prev => prev.map(m => m.id === id ? { ...m, available: !current } : m));
+      }
+    } catch (err) {
+      console.error(err);
     }
     setActionLoading(false);
   };
 
   const handleStock = async (id: string, newStock: number) => {
     setActionLoading(true);
-    const { error } = await supabase.from("menus").update({ stock: newStock }).eq("id", id);
-    if (!error) {
-      setMenus(prev => prev.map(m => m.id === id ? { ...m, stock: newStock } : m));
+    try {
+      const res = await fetch(`http://localhost:5000/api/menus/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: newStock })
+      });
+      if (res.ok) {
+        setMenus(prev => prev.map(m => m.id === id ? { ...m, stock: newStock } : m));
+      }
+    } catch (err) {
+      console.error(err);
     }
     setActionLoading(false);
   };
@@ -151,9 +167,13 @@ export default function MenuPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Yakin ingin menghapus menu ini?")) return;
     setActionLoading(true);
-    const { error } = await supabase.from("menus").delete().eq("id", id);
-    if (!error) {
-      setMenus(prev => prev.filter(m => m.id !== id));
+    try {
+      const res = await fetch(`http://localhost:5000/api/menus/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMenus(prev => prev.filter(m => m.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
     }
     setActionLoading(false);
   };
@@ -223,21 +243,38 @@ export default function MenuPage() {
 
     if (editId) {
       // Hilangkan field yang tidak diupdate misal rider_id & available
-      const { data, error } = await supabase.from("menus").update({
-        name: payload.name,
-        price: payload.price,
-        description: payload.description,
-        stock: payload.stock,
-        image_url: payload.image_url
-      }).eq("id", editId).select().single();
-      
-      if (!error && data) {
-        setMenus(prev => prev.map(m => m.id === editId ? data : m));
+      try {
+        const res = await fetch(`http://localhost:5000/api/menus/${editId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: payload.name,
+            price: payload.price,
+            description: payload.description,
+            stock: payload.stock,
+            image_url: payload.image_url
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMenus(prev => prev.map(m => m.id === editId ? data : m));
+        }
+      } catch (err) {
+        console.error(err);
       }
     } else {
-      const { data, error } = await supabase.from("menus").insert([payload]).select().single();
-      if (!error && data) {
-        setMenus(prev => [...prev, data]);
+      try {
+        const res = await fetch(`http://localhost:5000/api/menus`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMenus(prev => [...prev, data]);
+        }
+      } catch (err) {
+        console.error(err);
       }
     }
 

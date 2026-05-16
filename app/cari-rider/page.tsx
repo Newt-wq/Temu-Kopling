@@ -80,23 +80,22 @@ export default function CariRiderPage() {
 
     const fetchInitialData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('active_riders')
-          .select('*')
-          .eq('status', 'online');
-
-        if (isMounted && !error && data) {
-          setActiveRiders(data.map(r => ({
-            id: r.rider_id,
-            name: r.name,
-            brand: r.brand,
-            logo: r.logo,
-            lat: r.lat,
-            lng: r.lng,
-            status: r.status,
-            startTime: r.start_time,
-            landmark: r.landmark
-          })));
+        const res = await fetch('http://localhost:5000/api/active-riders');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data) {
+            setActiveRiders(data.map((r: any) => ({
+              id: r.rider_id,
+              name: r.name,
+              brand: r.brand,
+              logo: r.logo,
+              lat: r.lat,
+              lng: r.lng,
+              status: r.status,
+              startTime: r.start_time,
+              landmark: r.landmark
+            })));
+          }
         }
       } catch (err) {
         console.error("Fetch initial data error:", err);
@@ -214,15 +213,15 @@ export default function CariRiderPage() {
     setLoadingMenus(true);
     
     try {
-      const { data, error } = await supabase
-        .from('menus')
-        .select('*')
-        .eq('rider_id', targetRider.id)
-        .order('available', { ascending: false })
-        .order('name', { ascending: true });
-
-      if (!error && data) {
-        setMenus(data);
+      const res = await fetch(`http://localhost:5000/api/menus/${targetRider.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Sort available first, then alphabetically
+        const sorted = data.sort((a: any, b: any) => {
+          if (a.available === b.available) return a.name.localeCompare(b.name);
+          return a.available ? -1 : 1;
+        });
+        setMenus(sorted);
       } else {
         setMenus([]);
       }

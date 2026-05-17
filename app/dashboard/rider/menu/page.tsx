@@ -119,9 +119,8 @@ export default function MenuPage() {
   const fetchMenus = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/menus/${riderAuth!.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { data, error } = await supabase.from('menus').select('*').eq('rider_id', riderAuth!.id).order('name');
+      if (!error && data) {
         setMenus(data);
       }
     } catch (err) {
@@ -133,12 +132,8 @@ export default function MenuPage() {
   const handleToggle = async (id: string, current: boolean) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/menus/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ available: !current })
-      });
-      if (res.ok) {
+      const { error } = await supabase.from('menus').update({ available: !current }).eq('id', id);
+      if (!error) {
         setMenus(prev => prev.map(m => m.id === id ? { ...m, available: !current } : m));
       }
     } catch (err) {
@@ -150,12 +145,8 @@ export default function MenuPage() {
   const handleStock = async (id: string, newStock: number) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/menus/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock: newStock })
-      });
-      if (res.ok) {
+      const { error } = await supabase.from('menus').update({ stock: newStock }).eq('id', id);
+      if (!error) {
         setMenus(prev => prev.map(m => m.id === id ? { ...m, stock: newStock } : m));
       }
     } catch (err) {
@@ -168,8 +159,8 @@ export default function MenuPage() {
     if (!confirm("Yakin ingin menghapus menu ini?")) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/menus/${id}`, { method: 'DELETE' });
-      if (res.ok) {
+      const { error } = await supabase.from('menus').delete().eq('id', id);
+      if (!error) {
         setMenus(prev => prev.filter(m => m.id !== id));
       }
     } catch (err) {
@@ -244,19 +235,15 @@ export default function MenuPage() {
     if (editId) {
       // Hilangkan field yang tidak diupdate misal rider_id & available
       try {
-        const res = await fetch(`http://localhost:5000/api/menus/${editId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: payload.name,
-            price: payload.price,
-            description: payload.description,
-            stock: payload.stock,
-            image_url: payload.image_url
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
+        const { data, error } = await supabase.from('menus').update({
+          name: payload.name,
+          price: payload.price,
+          description: payload.description,
+          stock: payload.stock,
+          image_url: payload.image_url
+        }).eq('id', editId).select().single();
+        
+        if (!error && data) {
           setMenus(prev => prev.map(m => m.id === editId ? data : m));
         }
       } catch (err) {
@@ -264,13 +251,8 @@ export default function MenuPage() {
       }
     } else {
       try {
-        const res = await fetch(`http://localhost:5000/api/menus`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          const data = await res.json();
+        const { data, error } = await supabase.from('menus').insert([payload]).select().single();
+        if (!error && data) {
           setMenus(prev => [...prev, data]);
         }
       } catch (err) {

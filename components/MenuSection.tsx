@@ -20,11 +20,15 @@ const brands = [
   },
   {
     id: "ksj",
-    name: "Kopi Susu Jalanan",
+    name: "Kopi Sejuta Jiwa",
     shortName: "KSJ",
     logo: "/brand_coffe/KSJ.png",
     menus: [
-      { id: 1, name: "Es Kopi Susu", price: "Rp 15.000", desc: "Es kopi susu andalan KSJ yang creamy dan pas manisnya.", image: "/brand_coffe/ksj/es kopi susu.png" },
+      { id: 1, name: "Es Kopi Susu Sejuta Jiwa", price: "Rp 8.000", desc: "Sejuta Jiwa Latte — kopi susu andalan KSJ yang creamy dan pas manisnya.", image: "/brand_coffe/ksj/Eskopisususejutajiwa.jpeg" },
+      { id: 2, name: "Es Americano", price: "Rp 8.000", desc: "Iced Americano segar tanpa gula, cocok untuk pecinta kopi murni.", image: "/brand_coffe/ksj/EsAmericano.jpeg" },
+      { id: 3, name: "Es Lemonade", price: "Rp 8.000", desc: "Lemonade dingin yang menyegarkan, manis asam bikin nagih.", image: "/brand_coffe/ksj/EsLemonade.jpeg" },
+      { id: 4, name: "Es Kopi Vanilla", price: "Rp 10.000", desc: "Vanilla Latte dengan aroma vanilla lembut yang memanjakan lidah.", image: "/brand_coffe/ksj/Eskopivanila.jpeg" },
+      { id: 5, name: "Es Cokelat", price: "Rp 8.000", desc: "Iced Chocolate pekat khas KSJ untuk yang ingin sesuatu yang beda.", image: "/brand_coffe/ksj/EsCokelat.jpeg" },
     ]
   },
   {
@@ -138,11 +142,11 @@ export default function MenuSection() {
                 className="bg-white rounded-2xl border border-zinc-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-hidden group"
               >
                 {/* Gambar */}
-                <div className="relative w-full h-48 bg-zinc-100 overflow-hidden">
+                <div className="relative w-full h-52 bg-[#FAF8F5] overflow-hidden flex items-center justify-center p-3">
                   <img
                     src={menu.image}
                     alt={menu.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-auto h-auto max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
 

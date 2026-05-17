@@ -100,45 +100,54 @@ function RiderMapComponent({
 
   // ── Init map ─────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!MAPBOX_TOKEN) {
+      console.warn('Mapbox token not configured. Map will be disabled.');
+      return;
+    }
+
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     if (!mapContainerRef.current) return;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [112.7521, -7.2575], // Default Surabaya
-      zoom: 13,
-      antialias: true
-    });
+    try {
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [112.7521, -7.2575], // Default Surabaya
+        zoom: 13,
+        antialias: true
+      });
 
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
-    
-    const geolocate = new mapboxgl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true, maximumAge: 15000, timeout: 6000 },
-      trackUserLocation: false,
-      showAccuracyCircle: false,
-    });
-    map.addControl(geolocate);
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+      
+      const geolocate = new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true, maximumAge: 15000, timeout: 6000 },
+        trackUserLocation: false,
+        showAccuracyCircle: false,
+      });
+      map.addControl(geolocate);
 
-    map.on("load", () => {
-      geolocate.trigger();
-    });
+      map.on("load", () => {
+        geolocate.trigger();
+      });
 
-    map.on("click", (e: any) => {
-      // Only deselect if we didn't click a marker
-      if (e.originalEvent.target.closest('[data-circle]')) return;
-      onSelectRider(null);
-    });
+      map.on("click", (e: any) => {
+        // Only deselect if we didn't click a marker
+        if (e.originalEvent.target.closest('[data-circle]')) return;
+        onSelectRider(null);
+      });
 
-    mapRef.current = map;
+      mapRef.current = map;
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current.clear();
-      hasInitialLivePosCenteredRef.current = false;
-    };
+      return () => {
+        map.remove();
+        mapRef.current = null;
+        markersRef.current.clear();
+        hasInitialLivePosCenteredRef.current = false;
+      };
+    } catch (error) {
+      console.error('Failed to initialize Mapbox:', error);
+    }
   }, [onSelectRider]);
 
   // Auto-center to live position once
@@ -332,6 +341,30 @@ function RiderMapComponent({
       });
     }
   }, [selectedRider]);
+
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#FFFCF8] to-[#F7EFE5] rounded-lg flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-zinc-600 font-medium">Peta sedang tidak tersedia</p>
+          <p className="text-zinc-400 text-sm mt-1">Silakan tambahkan Mapbox token di .env.local</p>
+          <p className="text-zinc-400 text-xs mt-3">Hubungi developer untuk setup lebih lanjut</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show fallback if token is missing
+  if (!MAPBOX_TOKEN) {
+    return (
+      <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#FFFCF8] to-[#F7EFE5] rounded-lg flex items-center justify-center">
+        <div className="text-center px-4">
+          <p className="text-zinc-600 font-medium">Peta sedang tidak tersedia</p>
+          <p className="text-zinc-400 text-sm mt-2">Silakan tambahkan Mapbox token di .env.local</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full relative group">

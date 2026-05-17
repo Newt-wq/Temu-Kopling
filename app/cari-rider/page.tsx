@@ -383,7 +383,7 @@ export default function CariRiderPage() {
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center">
                 <Bike className="w-10 h-10 text-zinc-300 mb-3" />
-                <p className="text-sm font-semibold text-zinc-500">Tidak ada rider ditemukan</p>
+                <p className="text-sm font-semibold text-zinc-500">Rider tidak ditemukan</p>
                 <p className="text-xs text-zinc-400 mt-1">Coba ubah filter atau kata kunci pencarian</p>
               </div>
             ) : (

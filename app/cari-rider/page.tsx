@@ -91,10 +91,10 @@ export default function CariRiderPage() {
 
     const fetchInitialData = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/active-riders');
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data) {
+        const { data, error } = await supabase.from('active_riders').select('*').eq('status', 'online');
+        
+        if (!error && data) {
+          if (isMounted) {
             setActiveRiders(data.map((r: any) => ({
               id: r.rider_id,
               name: r.name,
@@ -267,9 +267,8 @@ export default function CariRiderPage() {
     setLoadingMenus(true);
     
     try {
-      const res = await fetch(`http://localhost:5000/api/menus/${targetRider.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { data, error } = await supabase.from('menus').select('*').eq('rider_id', targetRider.id);
+      if (!error && data) {
         // Sort available first, then alphabetically
         const sorted = data.sort((a: any, b: any) => {
           if (a.available === b.available) return a.name.localeCompare(b.name);
@@ -566,9 +565,14 @@ export default function CariRiderPage() {
                               <span className="font-black text-[#5C3D2E] text-base tracking-tight">Rp {menu.price.toLocaleString('id-ID')}</span>
                               
                               {menu.available && menu.stock > 0 && (
-                                <span className="text-[10px] font-bold text-[#A06C46] bg-[#A06C46]/10 px-2 py-1 rounded-lg border border-[#A06C46]/20">
-                                  Tersedia
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-1 rounded-lg border border-zinc-200">
+                                    Sisa: {menu.stock}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-[#A06C46] bg-[#A06C46]/10 px-2 py-1 rounded-lg border border-[#A06C46]/20">
+                                    Tersedia
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>

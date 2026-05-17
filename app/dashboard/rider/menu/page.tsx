@@ -316,25 +316,25 @@ export default function MenuPage() {
             <div>
               <label className="text-xs font-semibold text-zinc-500 mb-1 block">Nama Menu *</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={saving}
-                placeholder="cth. Es Kopi Susu" className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
+                placeholder="cth. Es Kopi Susu" className="w-full border border-zinc-200 bg-white text-zinc-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-zinc-500 mb-1 block">Harga *</label>
               <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} type="number" disabled={saving}
-                placeholder="18000" className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
+                placeholder="18000" className="w-full border border-zinc-200 bg-white text-zinc-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
             </div>
 
             <div className="sm:col-span-2">
               <label className="text-xs font-semibold text-zinc-500 mb-1 block">Deskripsi</label>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} disabled={saving}
-                placeholder="Deskripsikan menu ini..." className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] resize-none disabled:opacity-50" />
+                placeholder="Deskripsikan menu ini..." className="w-full border border-zinc-200 bg-white text-zinc-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] resize-none disabled:opacity-50" />
             </div>
 
             <div>
               <label className="text-xs font-semibold text-zinc-500 mb-1 block">Stok Awal</label>
               <input value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} type="number" disabled={saving}
-                className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
+                className="w-full border border-zinc-200 bg-white text-zinc-900 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] disabled:opacity-50" />
             </div>
 
             <div className="flex items-end">

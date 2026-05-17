@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Mail, Info, Loader, User } from "react-feather";
+import { Eye, EyeOff, Lock, Mail, Loader, ArrowLeft } from "react-feather";
 import { supabase } from "@/lib/supabase";
 
 export default function CustomerLoginPage() {
@@ -78,109 +78,130 @@ export default function CustomerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFFCF8] via-[#F7EFE5] to-[#E8DCCB] flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-10 left-10 w-96 h-96 bg-[#D4A373]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[500px] h-[500px] bg-[#8B5E3C]/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      {/* Premium Background Elements */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-[#E6D5C3]/40 to-transparent blur-[120px]" />
+        <div className="absolute top-[40%] -right-[10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-[#D4B895]/20 to-transparent blur-[150px]" />
+      </div>
 
-      <div className="relative w-full max-w-sm z-10">
-        {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-2xl">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="relative w-20 h-12 mb-4">
-              <Image src="/logo.png" alt="Temu Kopling" fill className="object-contain" />
-            </div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-[#5C3D2E]/10 flex items-center justify-center">
-                <User className="w-4 h-4 text-[#5C3D2E]" />
-              </div>
-              <h1 className="text-zinc-900 font-extrabold text-xl tracking-tight">Login Customer</h1>
-            </div>
-            <p className="text-zinc-500 text-sm text-center">Masuk untuk mulai pesan kopi</p>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="flex justify-center">
+          <div className="relative w-24 h-16 transform transition-transform hover:scale-105 duration-300">
+            <Image src="/logo.png" alt="Temu Kopling" fill className="object-contain drop-shadow-sm" priority />
           </div>
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-zinc-900 tracking-tight">
+          Selamat Datang
+        </h2>
+        <p className="mt-2 text-center text-sm text-zinc-500 max-w-sm mx-auto">
+          Masuk ke akun pelanggan untuk mulai menemukan kopi favoritmu di sekitarmu.
+        </p>
+      </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email */}
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px] relative z-10 px-4 sm:px-0">
+        <div className="bg-white/80 backdrop-blur-xl py-8 px-6 sm:px-10 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.1)] border border-white/60 rounded-3xl">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="text-zinc-700 text-xs font-bold mb-1.5 block">Email</label>
+              <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                Alamat Email
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-zinc-400" />
+                </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@temukopling.com"
+                  placeholder="nama@email.com"
                   required
-                  className="w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-4 py-3 text-zinc-800 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] transition-all shadow-sm"
+                  className="appearance-none block w-full pl-11 pr-4 py-3.5 border border-zinc-200 rounded-2xl shadow-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8C5E3C]/20 focus:border-[#8C5E3C] sm:text-sm bg-zinc-50/50 focus:bg-white text-zinc-900 transition-all duration-200"
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label className="text-zinc-700 text-xs font-bold mb-1.5 block">Password</label>
+              <label className="block text-sm font-semibold text-zinc-700 mb-1.5">
+                Kata Sandi
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-zinc-400" />
+                </div>
                 <input
                   type={showPass ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-10 py-3 text-zinc-800 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#5C3D2E]/30 focus:border-[#5C3D2E] transition-all shadow-sm"
+                  className="appearance-none block w-full pl-11 pr-11 py-3.5 border border-zinc-200 rounded-2xl shadow-sm placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8C5E3C]/20 focus:border-[#8C5E3C] sm:text-sm bg-zinc-50/50 focus:bg-white text-zinc-900 transition-all duration-200"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-zinc-400 hover:text-zinc-600 transition-colors focus:outline-none"
                 >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                <p className="text-red-600 text-xs font-bold">{error}</p>
+              <div className="rounded-2xl bg-red-50 p-4 border border-red-100">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-[#A06C46] to-[#5C3D2E] text-white font-bold text-sm transition-all duration-300 shadow-lg shadow-[#A06C46]/30 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Memverifikasi...
-                </>
-              ) : "Masuk"}
-            </button>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-2xl shadow-sm text-sm font-bold text-white bg-[#8C5E3C] hover:bg-[#7A4F30] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8C5E3C] transition-all duration-200 hover:shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Memproses...
+                  </span>
+                ) : (
+                  "Masuk"
+                )}
+              </button>
+            </div>
           </form>
 
+          <div className="mt-8 relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-zinc-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-3 bg-white text-zinc-500">atau</span>
+            </div>
+          </div>
 
+          <div className="mt-6 text-center">
+            <p className="text-sm text-zinc-600">
+              Belum memiliki akun?{" "}
+              <Link href="/register" className="font-semibold text-[#8C5E3C] hover:text-[#7A4F30] transition-colors">
+                Daftar sekarang
+              </Link>
+            </p>
+          </div>
+        </div>
 
-          {/* Register Link */}
-          <p className="text-center text-zinc-500 text-xs mt-6 font-medium">
-            Belum punya akun?{" "}
-            <Link href="/register" className="text-[#A06C46] hover:text-[#5C3D2E] font-bold transition-colors">
-              Daftar di sini
-            </Link>
-          </p>
-
-          {/* Back */}
-          <p className="text-center text-zinc-400 text-[11px] mt-4 font-medium">
-            <Link href="/" className="hover:text-zinc-600 transition-colors">
-              Kembali ke beranda
-            </Link>
-          </p>
+        <div className="mt-8 flex justify-center">
+          <Link href="/" className="flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors group">
+            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Kembali ke Beranda
+          </Link>
         </div>
       </div>
     </div>
   );
 }
+

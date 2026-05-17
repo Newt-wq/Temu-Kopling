@@ -83,9 +83,7 @@ export default function NgetemPage() {
   }, [isNgetem]);
 
   const startGpsWatch = useCallback(() => {
-    // We still watch position just to update the Rider's OWN screen (so they know where they actually are)
-    // BUT we NO LONGER send these updates to Supabase.
-    // The public pin is now LOCKED to the location where they started Ngetem.
+    // Restore tracking: Update both local screen and Supabase
     if (navigator.geolocation) {
       const wid = navigator.geolocation.watchPosition(
         (position) => {
@@ -96,6 +94,18 @@ export default function NgetemPage() {
             if (prev && Math.abs(prev[0] - lat) < 0.00001 && Math.abs(prev[1] - lng) < 0.00001) {
               return prev;
             }
+            
+            // Send live location update to Supabase
+            if (riderAuth) {
+              supabase
+                .from('active_riders')
+                .update({ lat, lng })
+                .eq('rider_id', riderAuth.id)
+                .then(({ error }) => {
+                  if (error) console.error("Error updating location:", error);
+                });
+            }
+
             return [lat, lng];
           });
         },
@@ -104,7 +114,7 @@ export default function NgetemPage() {
       );
       watchIdRef.current = wid;
     }
-  }, []);
+  }, [riderAuth]);
 
   const stopGpsWatch = () => {
     if (watchIdRef.current !== null) {

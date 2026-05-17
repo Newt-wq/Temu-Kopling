@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Search, X, SlidersHorizontal, Coffee, MapPin, Clock, ChevronRight, Navigation, MessageCircle, Map as MapIcon, ChevronLeft } from "lucide-react";
+import { Search, X, SlidersHorizontal, Coffee, MapPin, Clock, ChevronRight, Navigation, MessageCircle, Map as MapIcon, ChevronLeft, Bike } from "lucide-react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
@@ -203,8 +203,8 @@ export default function CariRiderPage() {
     };
 
     let result = activeRiders.filter((r) => {
-      // Jika lokasi pelanggan (currentLivePos) diketahui, sembunyikan rider di luar radius 5 km
-      if (currentLivePos) {
+      // Jika tab "Terdekat", batasi hanya radius 5 KM
+      if (activeFilter === "Terdekat" && currentLivePos) {
         const dist = calcDist(currentLivePos[0], currentLivePos[1], r.lat, r.lng);
         if (dist > MAX_RADIUS_KM) return false;
       }
@@ -218,10 +218,18 @@ export default function CariRiderPage() {
     });
 
     if (activeFilter === "Terdekat" && currentLivePos) {
+      // Urutkan dari yang paling dekat
       result = result.sort((a, b) => {
         const distA = calcDist(currentLivePos[0], currentLivePos[1], a.lat, a.lng);
         const distB = calcDist(currentLivePos[0], currentLivePos[1], b.lat, b.lng);
         return distA - distB;
+      });
+    } else {
+      // Tab "Semua": Urutkan berdasarkan yang paling baru mulai ngetem
+      result = result.sort((a, b) => {
+        const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+        const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+        return timeB - timeA;
       });
     }
 
@@ -374,7 +382,7 @@ export default function CariRiderPage() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center">
-                <Coffee className="w-10 h-10 text-zinc-300 mb-3" />
+                <Bike className="w-10 h-10 text-zinc-300 mb-3" />
                 <p className="text-sm font-semibold text-zinc-500">Tidak ada rider ditemukan</p>
                 <p className="text-xs text-zinc-400 mt-1">Coba ubah filter atau kata kunci pencarian</p>
               </div>

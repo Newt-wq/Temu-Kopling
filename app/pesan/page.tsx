@@ -232,14 +232,13 @@ export default function PesanPage() {
 
   const activeChat = chats.find(c => c.chatId === activeChatId);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || !activeChatId || !socketRef.current) return;
+  const sendMessage = (text: string) => {
+    if (!text.trim() || !activeChatId || !socketRef.current) return;
 
     const now = new Date();
     const newMessage: Message = {
       sender: "customer",
-      text: inputText.trim(),
+      text: text.trim(),
       timestamp: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
       rawTimestamp: now.toISOString(),
     };
@@ -256,7 +255,16 @@ export default function PesanPage() {
       riderId: activeChat?.riderId,
       message: newMessage,
     });
+  };
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputText);
     setInputText("");
+  };
+
+  const handleTemplateClick = (template: string) => {
+    sendMessage(template);
   };
 
   if (checkingAuth) {
@@ -399,7 +407,7 @@ export default function PesanPage() {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setInputText(template)}
+                        onClick={() => handleTemplateClick(template)}
                         className="flex-shrink-0 text-[13px] font-medium text-zinc-600 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-[#FAF8F5] hover:border-[#A06C46]/40 hover:text-[#5C3D2E] transition-all"
                       >
                         {template}

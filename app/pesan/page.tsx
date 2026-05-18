@@ -399,10 +399,10 @@ export default function PesanPage() {
                   {/* Chat Templates */}
                   <div className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide max-w-4xl mx-auto">
                     {[
-                      "🏃‍♂️ Meluncur bang!",
-                      "☕ Tolong disiapin bang",
-                      "👀 Masih ngetem bang?",
-                      "⏳ Tunggu bentar, otw!"
+                      "Meluncur bang!",
+                      "Tolong disiapin bang",
+                      "Masih ngetem bang?",
+                      "Tunggu bentar, otw!"
                     ].map((template, i) => (
                       <button
                         key={i}

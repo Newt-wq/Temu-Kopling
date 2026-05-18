@@ -28,10 +28,10 @@ export default function ContactSection() {
               <div>
                 <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wide mb-0.5">Email</p>
                 <a
-                  href="mailto:halo@temukopling.com"
+                  href="mailto:info@temukopling.com"
                   className="text-base font-bold text-zinc-900 hover:text-[#A06C46] transition-colors break-all"
                 >
-                  halo@temukopling.com
+                  info@temukopling.com
                 </a>
               </div>
             </div>
@@ -44,10 +44,12 @@ export default function ContactSection() {
               <div>
                 <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wide mb-0.5">WhatsApp / Telepon</p>
                 <a
-                  href="tel:+6281234567890"
+                  href="https://wa.me/6285888770484"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-base font-bold text-zinc-900 hover:text-[#A06C46] transition-colors"
                 >
-                  +62 812-3456-7890
+                  +62 858-8877-0484
                 </a>
               </div>
             </div>
@@ -59,7 +61,7 @@ export default function ContactSection() {
               </div>
               <div>
                 <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wide mb-0.5">Alamat Kantor</p>
-                <p className="text-base font-bold text-zinc-900">Jl. Kopi Nusantara No. 12, Jakarta</p>
+                <p className="text-base font-bold text-zinc-900">Jl. Raya Cipayung No. 88, Cipayung, Jakarta Timur</p>
               </div>
             </div>
           </div>
@@ -85,13 +87,15 @@ export default function ContactSection() {
             </div>
 
             <div className="relative z-10">
-              <Link
-                href="/daftar-rider"
+              <a
+                href="https://wa.me/6285888770484?text=Halo%2C%20saya%20tertarik%20untuk%20bergabung%20menjadi%20rider%20kopi%20keliling%20di%20Temu%20Kopling."
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#8C5E3C] hover:bg-[#A06C46] text-white px-7 py-3.5 rounded-full font-bold text-base transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto justify-center sm:justify-start"
               >
                 <span>Daftar Sekarang</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </a>
             </div>
           </div>
 

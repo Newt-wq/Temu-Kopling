@@ -46,17 +46,17 @@ export default function Home() {
             </div>
 
             {/* 4. Tombol Aksi */}
-            <div className="flex flex-col w-full gap-3 pb-4">
+            <div className="flex flex-col w-full gap-3.5 pb-4 px-2">
               <Link
                 href="/cari-rider"
-                className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-[#A06C46] to-[#5C3D2E] text-white rounded-full font-bold text-base hover:from-[#B57C54] hover:to-[#4A2B12] transition-all duration-300 shadow-lg ring-4 ring-[#A06C46]/20"
+                className="group flex items-center justify-center gap-3 px-8 py-4 bg-[#8C5E3C] hover:bg-[#7A4F30] text-white rounded-full font-semibold text-base transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(140,94,60,0.6)] active:scale-[0.98]"
               >
                 <MapPin className="w-5 h-5 animate-bounce" />
                 <span>Cari Lokasi Rider</span>
               </Link>
               <Link
                 href="#menu"
-                className="flex items-center justify-center px-8 py-3.5 rounded-full font-semibold text-base text-zinc-700 bg-white border-2 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-all duration-300"
+                className="flex items-center justify-center px-8 py-4 rounded-full font-medium text-base text-zinc-600 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] hover:text-zinc-900 border border-zinc-100 transition-all duration-300 active:scale-[0.98]"
               >
                 Lihat Menu
               </Link>
@@ -85,17 +85,17 @@ export default function Home() {
                 Tidak perlu menebak-nebak kapan kopi keliling lewat. Cari tahu lokasi <span className="font-semibold text-zinc-800">pin mangkal</span> rider Temu Kopling hari ini dan hampiri sekarang juga!
               </p>
 
-              <div className="flex flex-row items-center gap-4 pt-2">
+              <div className="flex flex-row items-center gap-4 pt-4">
                 <Link
                   href="/cari-rider"
-                  className="flex items-center justify-center gap-3 px-10 py-4 bg-gradient-to-r from-[#A06C46] to-[#5C3D2E] text-white rounded-full font-bold text-lg hover:from-[#B57C54] hover:to-[#4A2B12] transition-all duration-300 shadow-xl shadow-[#A06C46]/40 hover:shadow-2xl hover:-translate-y-1 ring-4 ring-[#A06C46]/30"
+                  className="group flex items-center justify-center gap-3 px-9 py-4 bg-[#8C5E3C] hover:bg-[#7A4F30] text-white rounded-full font-semibold text-lg transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(140,94,60,0.6)] hover:shadow-[0_12px_35px_-10px_rgba(140,94,60,0.7)] active:scale-[0.98] hover:-translate-y-0.5"
                 >
                   <MapPin className="w-6 h-6 animate-bounce" />
                   <span>Cari Lokasi Rider</span>
                 </Link>
                 <Link
                   href="#menu"
-                  className="flex items-center justify-center px-8 py-3.5 rounded-full font-semibold text-base text-zinc-700 bg-white border-2 border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 transition-all duration-300"
+                  className="flex items-center justify-center px-9 py-4 rounded-full font-medium text-lg text-zinc-600 bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] hover:text-zinc-900 border border-zinc-100 transition-all duration-300 active:scale-[0.98] hover:-translate-y-0.5"
                 >
                   Lihat Menu
                 </Link>

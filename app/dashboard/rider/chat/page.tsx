@@ -164,14 +164,13 @@ export default function RiderChatPage() {
 
   const activeChat = chats.find(c => c.chatId === activeChatId);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || !activeChatId || !socketRef.current) return;
+  const sendMessage = (text: string) => {
+    if (!text.trim() || !activeChatId || !socketRef.current) return;
 
     const now = new Date();
     const newMessage: Message = {
       sender: "rider",
-      text: inputText.trim(),
+      text: text.trim(),
       timestamp: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
       rawTimestamp: now.toISOString(),
     };
@@ -189,7 +188,16 @@ export default function RiderChatPage() {
       riderData: { riderName: riderAuth?.name, brand: riderAuth?.brand, logo: riderAuth?.logo },
       message: newMessage,
     });
+  };
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputText);
     setInputText("");
+  };
+
+  const handleTemplateClick = (template: string) => {
+    sendMessage(template);
   };
 
   return (
@@ -285,10 +293,6 @@ export default function RiderChatPage() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-zinc-900 text-[15px] leading-tight mb-0.5">{activeChat.customer.name}</h3>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <p className="text-xs text-green-600 font-bold">Pelanggan Aktif</p>
-                    </div>
                   </div>
                 </div>
 
@@ -310,6 +314,25 @@ export default function RiderChatPage() {
 
                 {/* Input */}
                 <div className="bg-white p-4 md:p-6 border-t border-[#E8DCCB]/60 shrink-0">
+                  {/* Chat Templates */}
+                  <div className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide max-w-4xl mx-auto">
+                    {[
+                      "Siap, ditunggu ya!",
+                      "Masih ngetem nih",
+                      "Kopi sedang disiapkan",
+                      "Otw ke sana sebentar"
+                    ].map((template, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleTemplateClick(template)}
+                        className="flex-shrink-0 text-[13px] font-medium text-zinc-600 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-full hover:bg-[#FAF8F5] hover:border-[#A06C46]/40 hover:text-[#5C3D2E] transition-all"
+                      >
+                        {template}
+                      </button>
+                    ))}
+                  </div>
+
                   <form onSubmit={handleSend} className="flex items-center gap-3 max-w-4xl mx-auto">
                     <input
                       type="text"

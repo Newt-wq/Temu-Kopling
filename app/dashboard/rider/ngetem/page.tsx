@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Square, Clock, Navigation, MapPin, X, Check } from "lucide-react";
 import { useRiderAuth } from "@/app/dashboard/rider/layout";
 import { supabase } from "@/lib/supabase";
+import { io, Socket } from "socket.io-client";
 
 const NgetemMap = dynamic(() => import("@/components/NgetemMap"), {
   ssr: false,
@@ -33,6 +34,17 @@ export default function NgetemPage() {
   const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const watchIdRef = useRef<number | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Initialize socket connection
+  useEffect(() => {
+    if (!riderAuth) return;
+    const socket = io("http://localhost:5000");
+    socketRef.current = socket;
+    return () => {
+      socket.disconnect();
+    };
+  }, [riderAuth]);
 
   // Initialize state from Supabase on load
   useEffect(() => {
@@ -95,16 +107,25 @@ export default function NgetemPage() {
               return prev;
             }
             
-            // Send live location update to Supabase
-            if (riderAuth) {
-              supabase
-                .from('active_riders')
-                .update({ lat, lng })
-                .eq('rider_id', riderAuth.id)
-                .then(({ error }) => {
-                  if (error) console.error("Error updating location:", error);
-                });
-            }
+              if (riderAuth) {
+                // Background update DB
+                supabase
+                  .from('active_riders')
+                  .update({ lat, lng })
+                  .eq('rider_id', riderAuth.id)
+                  .then(({ error }) => {
+                    if (error) console.error("Error updating location:", error);
+                  });
+                
+                // Real-time broadcast
+                if (socketRef.current) {
+                  socketRef.current.emit("update_location", {
+                    id: riderAuth.id,
+                    lat,
+                    lng
+                  });
+                }
+              }
 
             return [lat, lng];
           });
@@ -199,6 +220,20 @@ export default function NgetemPage() {
       return;
     }
 
+    // Broadcast Real-time
+    if (socketRef.current) {
+      socketRef.current.emit("start_ngetem", {
+        id: riderAuth.id,
+        name: riderAuth.name,
+        brand: riderAuth.brand,
+        logo: riderAuth.logo,
+        lat: previewPos[0],
+        lng: previewPos[1],
+        landmark: landmarkInput.trim(),
+        startTime: new Date().toISOString()
+      });
+    }
+
     // 2. Set Local State
     setRiderPos(previewPos);
     setLandmark(landmarkInput.trim());
@@ -249,6 +284,11 @@ export default function NgetemPage() {
       .from('active_riders')
       .update({ status: 'offline' })
       .eq('rider_id', riderAuth.id);
+
+    // Broadcast Real-time
+    if (socketRef.current) {
+      socketRef.current.emit("stop_ngetem", riderAuth.id);
+    }
 
     setIsNgetem(false);
     setRiderPos(null);

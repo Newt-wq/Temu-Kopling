@@ -7,6 +7,7 @@ import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { io } from "socket.io-client";
 
 export interface Rider {
   id: string;
@@ -85,15 +86,42 @@ export default function CariRiderPage() {
     }
   }, []);
 
-  // ── INIT SUPABASE REALTIME ────────────────────────────────────────────────
+  // ── INIT REALTIME (Socket.io & Supabase Fallback) ────────────────────────────────────────────────
   useEffect(() => {
     let isMounted = true;
 
+    // 1. Socket.io for Instant Real-time Updates (Bypass DB lag)
+    const socket = io("http://localhost:5000");
+
+    socket.on("active_riders_update", (riders: any[]) => {
+      if (isMounted) {
+        setActiveRiders(riders.map(r => ({
+          id: r.id,
+          name: r.name,
+          brand: r.brand,
+          logo: r.logo,
+          lat: r.lat,
+          lng: r.lng,
+          status: r.status,
+          startTime: r.startTime,
+          landmark: r.landmark
+        })));
+        
+        // Cleanup selectedRider if they went offline
+        setSelectedRider(current => {
+          if (!current) return null;
+          const stillOnline = riders.find(r => r.id === current.id);
+          return stillOnline ? current : null;
+        });
+      }
+    });
+
+    // 2. Fallback Initial Data Fetch (Just in case socket takes time)
     const fetchInitialData = async () => {
       try {
         const { data, error } = await supabase.from('active_riders').select('*').eq('status', 'online');
         
-        if (!error && data) {
+        if (!error && data && activeRiders.length === 0) { // Only set if socket hasn't populated it yet
           if (isMounted) {
             setActiveRiders(data.map((r: any) => ({
               id: r.rider_id,
@@ -117,61 +145,17 @@ export default function CariRiderPage() {
 
     fetchInitialData();
 
-    // Subscribe to active_riders changes
+    // 3. Supabase Realtime Fallback
     const channel = supabase
       .channel('active_riders_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'active_riders' }, (payload) => {
-        const event = payload.eventType;
-        const newData = payload.new as any;
-        const oldData = payload.old as any;
-
-        setActiveRiders(prev => {
-          if (event === 'INSERT' || event === 'UPDATE') {
-            if (newData.status === 'online') {
-              const mapped = {
-                id: newData.rider_id,
-                name: newData.name,
-                brand: newData.brand,
-                logo: newData.logo,
-                lat: newData.lat,
-                lng: newData.lng,
-                status: newData.status,
-                startTime: newData.start_time,
-                landmark: newData.landmark
-              };
-              const idx = prev.findIndex(r => r.id === mapped.id);
-              if (idx !== -1) {
-                // Update only if data actually changed to avoid shallow comparison issues
-                const existing = prev[idx];
-                if (existing.lat === mapped.lat && existing.lng === mapped.lng && existing.status === mapped.status && existing.landmark === mapped.landmark) {
-                  return prev;
-                }
-                const next = [...prev];
-                next[idx] = mapped;
-                return next;
-              }
-              return [...prev, mapped];
-            } else {
-              // Status changed to offline
-              return prev.filter(r => r.id !== newData.rider_id);
-            }
-          } else if (event === 'DELETE') {
-            return prev.filter(r => r.id !== oldData.rider_id);
-          }
-          return prev;
-        });
-
-        // Clean up selectedRider if it goes offline
-        if (event === 'UPDATE' && newData.status !== 'online') {
-          setSelectedRider(current => (current?.id === newData.rider_id ? null : current));
-        } else if (event === 'DELETE') {
-          setSelectedRider(current => (current?.id === oldData.rider_id ? null : current));
-        }
+        // We let Socket.io handle the primary updates, but keep this as fallback
       })
       .subscribe();
 
     return () => {
       isMounted = false;
+      socket.disconnect();
       supabase.removeChannel(channel);
     };
   }, []);

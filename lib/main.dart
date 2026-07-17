@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/main_screen.dart'; // Mengambil MainScreen dari folder screens
+import 'screens/pages/login_page.dart';
+import 'screens/pages/signup_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +28,18 @@ class MyApp extends StatelessWidget {
         // Set tema warna coklat secara keseluruhan
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
       ),
-      home: const MainScreen(),
+      home: const AuthGate(),
     );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return const LoginPage();
+    return const MainScreen();
   }
 }
